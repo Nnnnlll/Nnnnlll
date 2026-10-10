@@ -200,20 +200,58 @@
   .switch.on::after { left: 23px; }
   .hint { font-size: 11px; color: var(--ink-soft); opacity: .8; margin-top: 10px; line-height: 1.5; }
   #fpsText { font-size: 11px; color: var(--ink-soft); opacity: .7; margin-top: 16px; text-align: center; }
-
+  /* ── 音乐播放器 ── */
   .player { margin-top: 26px; padding: 20px; border-radius: 26px; }
   .player .title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
-  .song-list { display: flex; flex-direction: column; gap: 9px; }
-  .song-btn {
-    text-align: left; padding: 11px 14px; border-radius: 16px; font-size: 13px; cursor: pointer;
-    color: var(--ink); font-family: inherit;
+  .m-search { display: flex; gap: 8px; }
+  .m-search input {
+    flex: 1; min-width: 0; padding: 11px 14px; border-radius: 16px; font-size: 13px;
+    color: var(--ink); font-family: inherit; outline: none;
     border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.28);
-    backdrop-filter: blur(8px); transition: all .16s;
+    backdrop-filter: blur(8px);
   }
-  .song-btn:hover { background: rgba(255,255,255,.45); }
-  .song-btn.playing { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px rgba(74,144,226,.35); }
-  .now-playing { margin-top: 14px; font-size: 13px; color: var(--ink-soft); min-height: 18px; }
-  audio { width: 100%; margin-top: 10px; border-radius: 14px; }
+  .m-search input::placeholder { color: var(--ink-soft); }
+  .m-search button, .m-btn {
+    padding: 11px 14px; border-radius: 16px; font-size: 13px; cursor: pointer;
+    color: var(--ink); font-family: inherit; white-space: nowrap;
+    border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.28); transition: all .16s;
+  }
+  .m-search button:hover, .m-btn:hover { background: rgba(255,255,255,.45); }
+  .m-btn:disabled { opacity: .4; cursor: default; }
+  .m-hint { margin-top: 10px; font-size: 11px; color: var(--ink-soft); opacity: .85; line-height: 1.5; }
+  .m-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow: auto; }
+  .m-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: inherit; color: inherit;
+    padding: 8px 10px; border-radius: 14px; cursor: pointer;
+    border: 1px solid transparent; background: rgba(255,255,255,.22); transition: background .16s;
+  }
+  .m-item:hover { background: rgba(255,255,255,.45); }
+  .m-item.playing { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .m-item img { width: 42px; height: 42px; border-radius: 10px; flex: none; object-fit: cover; background: rgba(0,0,0,.12); }
+  .m-item .m-txt { min-width: 0; }
+  .m-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-sub { font-size: 11px; opacity: .75; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-now { margin-top: 14px; padding: 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.24); }
+  .m-now-top { display: flex; align-items: center; gap: 10px; }
+  .m-now-top img { width: 46px; height: 46px; border-radius: 12px; flex: none; object-fit: cover; }
+  .m-now-info { min-width: 0; }
+  .m-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-artist { font-size: 11px; color: var(--ink-soft); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-bar { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .m-time { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; flex: none; }
+  .m-seek { flex: 1; min-width: 0; }
+  input[type=range] { accent-color: var(--accent); }
+  .m-ctrl { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .m-play {
+    width: 52px; height: 52px; border-radius: 50%; font-size: 17px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: #fff;
+    box-shadow: 0 6px 16px rgba(74,144,226,.35);
+  }
+  .m-ctrl .m-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .m-vol { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 11px; color: var(--ink-soft); }
+  .m-vol input { flex: 1; min-width: 0; }
+  #mAudio { display: none; }
+
 
   footer { margin-top: 34px; text-align: center; font-size: 12px; color: var(--ink-soft); opacity: .8; }
 
@@ -231,9 +269,11 @@
   body.dark .glass::after { opacity: .28; }
   body.dark .opt { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
   body.dark .opt.active { background: var(--accent); border-color: var(--accent); }
-  body.dark .song-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.13); }
-  body.dark .song-btn.playing { background: var(--accent); border-color: var(--accent); }
   body.dark #closeSetting { background: rgba(255,255,255,.1); }
+  body.dark .m-search input, body.dark .m-search button, body.dark .m-btn,
+  body.dark .m-item, body.dark .m-now { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
+  body.dark .m-item:hover { background: rgba(255,255,255,.16); }
+  body.dark .m-item.playing { background: var(--accent); border-color: var(--accent); }
 /* 游戏弹窗 */
 .gamemodal{position:fixed;inset:0;z-index:99;display:none}
 .gamemodal.on{display:block}
@@ -348,9 +388,43 @@
 
   <section class="player glass">
     <div class="title">🎧 音乐播放器</div>
-    <div class="song-list" id="songList"></div>
-    <div class="now-playing" id="nowPlaying">选择一首歌开始播放</div>
-    <audio id="audio" controls preload="none"></audio>
+
+    <form class="m-search" id="mSearchForm">
+      <input id="mQuery" type="search" placeholder="搜歌名或歌手，例如：周杰伦 晴天" autocomplete="off" enterkeyhint="search">
+      <button type="submit" id="mSearchBtn">搜索</button>
+    </form>
+    <div class="m-hint" id="mHint">曲库来自 iTunes Store，放的是 30 秒试听片段。也可以点 📁 选本机音频文件来播。</div>
+
+    <div class="m-list" id="mList"></div>
+
+    <div class="m-now">
+      <div class="m-now-top">
+        <img id="mCover" alt="" hidden>
+        <div class="m-now-info">
+          <div class="m-title" id="mTitle">还没有播放</div>
+          <div class="m-artist" id="mArtist">搜一首歌，或者选本机文件</div>
+        </div>
+      </div>
+
+      <div class="m-bar">
+        <span class="m-time" id="mCur">0:00</span>
+        <input class="m-seek" id="mSeek" type="range" min="0" max="1000" value="0" step="1" aria-label="播放进度">
+        <span class="m-time" id="mDur">0:00</span>
+      </div>
+
+      <div class="m-ctrl">
+        <button class="m-btn" id="mPrev" type="button" title="上一首">⏮</button>
+        <button class="m-play" id="mPlay" type="button" title="播放 / 暂停">▶</button>
+        <button class="m-btn" id="mNext" type="button" title="下一首">⏭</button>
+        <button class="m-btn" id="mLoop" type="button" title="循环模式">🔁 列表</button>
+        <button class="m-btn" id="mFileBtn" type="button" title="播放本机音频文件">📁 本机</button>
+      </div>
+
+      <div class="m-vol">🔊 <input id="mVol" type="range" min="0" max="100" value="100" aria-label="音量"></div>
+    </div>
+
+    <input id="mFile" type="file" accept="audio/*" hidden>
+    <audio id="mAudio" preload="none"></audio>
   </section>
 
   <footer>作者：林紫涵，+10086</footer>
@@ -543,35 +617,178 @@
     applyPerf();
   };
 
-  /* ── 音乐播放器 ── */
-  var songs = [
-    { name: '示例音乐 1', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-    { name: '示例音乐 2', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-    { name: '示例音乐 3', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
-  ];
-  var audio = document.getElementById('audio');
-  var songList = document.getElementById('songList');
-  var nowPlaying = document.getElementById('nowPlaying');
+  /* ── 音乐播放器：搜索 / 播放 / 暂停 / 上下首 / 进度 / 音量 / 循环 ── */
+  var mAudio = document.getElementById('mAudio');
+  var mList = document.getElementById('mList');
+  var mHint = document.getElementById('mHint');
+  var mTitle = document.getElementById('mTitle');
+  var mArtist = document.getElementById('mArtist');
+  var mCover = document.getElementById('mCover');
+  var mCur = document.getElementById('mCur');
+  var mDur = document.getElementById('mDur');
+  var mSeek = document.getElementById('mSeek');
+  var mPlayBtn = document.getElementById('mPlay');
+  var mVol = document.getElementById('mVol');
+  var mLoop = document.getElementById('mLoop');
+  var mFileBtn = document.getElementById('mFileBtn');
+  var mFile = document.getElementById('mFile');
+  var mQuery = document.getElementById('mQuery');
+  var mQueue = [];
+  var mIndex = -1;
+  var mLoopMode = 0;                       /* 0 列表循环 1 单曲循环 2 随机 */
+  var mSeeking = false;
+  var M_LOOP_TXT = ['🔁 列表', '🔁 单曲', '🔀 随机'];
 
-  songs.forEach(function (song, i) {
-    var btn = document.createElement('button');
-    btn.className = 'song-btn';
-    btn.textContent = '▶ ' + song.name;
-    btn.onclick = function () { playSong(i); };
-    songList.appendChild(btn);
-  });
-
-  function playSong(index) {
-    var song = songs[index];
-    audio.src = song.src;
-    audio.play();
-    nowPlaying.textContent = '正在播放：' + song.name;
-    var btns = document.querySelectorAll('.song-btn');
-    Array.prototype.forEach.call(btns, function (b, i) {
-      b.classList.toggle('playing', i === index);
-      b.textContent = (i === index ? '🎵 ' : '▶ ') + songs[i].name;
+  function mFmt(t) {
+    if (!isFinite(t) || t < 0) return '0:00';
+    t = Math.floor(t);
+    return Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
+  }
+  function mPlayIt() {
+    var p = mAudio.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+  function mSetNow(item) {
+    mTitle.textContent = item ? item.name : '还没有播放';
+    mArtist.textContent = item ? item.sub : '搜一首歌，或者选本机文件';
+    if (item && item.cover) { mCover.src = item.cover; mCover.hidden = false; }
+    else { mCover.removeAttribute('src'); mCover.hidden = true; }
+  }
+  function mMarkPlaying() {
+    var items = mList.querySelectorAll('.m-item');
+    Array.prototype.forEach.call(items, function (el, i) {
+      el.classList.toggle('playing', i === mIndex);
     });
   }
+  function mRender() {
+    mList.innerHTML = '';
+    mQueue.forEach(function (item, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'm-item';
+      var img = document.createElement('img');
+      img.alt = ''; img.loading = 'lazy';
+      if (item.cover) img.src = item.cover;
+      var txt = document.createElement('div');
+      txt.className = 'm-txt';
+      var n = document.createElement('div'); n.className = 'm-name'; n.textContent = item.name;
+      var s = document.createElement('div'); s.className = 'm-sub'; s.textContent = item.sub;
+      txt.appendChild(n); txt.appendChild(s);
+      b.appendChild(img); b.appendChild(txt);
+      b.onclick = function () { mPlayAt(i); };
+      mList.appendChild(b);
+    });
+    mMarkPlaying();
+  }
+  function mPlayAt(i) {
+    if (i < 0 || i >= mQueue.length) return;
+    mIndex = i;
+    var item = mQueue[i];
+    mAudio.src = item.src;
+    mPlayIt();
+    mSetNow(item);
+    mSeek.value = 0; mCur.textContent = '0:00';
+    mMarkPlaying();
+  }
+  function mStep(delta) {
+    if (!mQueue.length) return;
+    var i;
+    if (mLoopMode === 2 && mQueue.length > 1) {
+      do { i = Math.floor(Math.random() * mQueue.length); } while (i === mIndex);
+    } else {
+      i = (mIndex + delta + mQueue.length) % mQueue.length;
+    }
+    mPlayAt(i);
+  }
+  function mToggle() {
+    if (!mQueue.length) { mHint.textContent = '先搜一首歌（或点 📁 选本机文件），再点播放'; return; }
+    if (mAudio.paused) {
+      if (mIndex < 0 || !mAudio.src) mPlayAt(0); else mPlayIt();
+    } else {
+      mAudio.pause();
+    }
+  }
+  function mSearch() {
+    var q = mQuery.value.trim();
+    if (!q) { mHint.textContent = '先输入歌名或歌手'; return; }
+    mHint.textContent = '搜索中…';
+    mList.innerHTML = '';
+    fetch('https://itunes.apple.com/search?media=music&entity=song&limit=25&country=hk&term=' + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var res = (d.results || []).filter(function (x) { return x.previewUrl; });
+        if (!res.length) {
+          mQueue = []; mIndex = -1;
+          mHint.textContent = '没搜到「' + q + '」，换个关键词试试（中文老歌可以试试繁体名）';
+          return;
+        }
+        mQueue = res.map(function (x) {
+          return {
+            name: x.trackName || '未命名',
+            sub: (x.artistName || '') + (x.collectionName ? ' · ' + x.collectionName : '') +
+                 (x.trackTimeMillis ? ' · ' + mFmt(x.trackTimeMillis / 1000) : ''),
+            cover: x.artworkUrl100 || x.artworkUrl60 || '',
+            src: x.previewUrl
+          };
+        });
+        mIndex = -1;
+        mRender();
+        mHint.textContent = '「' + q + '」找到 ' + mQueue.length + ' 首，点一下就能播（30 秒试听）';
+      })
+      .catch(function () {
+        mHint.textContent = '搜索失败：网络不通，或被广告拦截插件挡了 itunes.apple.com';
+      });
+  }
+
+  document.getElementById('mSearchForm').onsubmit = function () { mSearch(); return false; };
+  mPlayBtn.onclick = mToggle;
+  document.getElementById('mPrev').onclick = function () { mStep(-1); };
+  document.getElementById('mNext').onclick = function () { mStep(1); };
+  mLoop.onclick = function () {
+    mLoopMode = (mLoopMode + 1) % 3;
+    mLoop.textContent = M_LOOP_TXT[mLoopMode];
+    mLoop.classList.toggle('on', mLoopMode !== 0);
+  };
+  mFileBtn.onclick = function () { mFile.click(); };
+  mFile.onchange = function () {
+    var f = mFile.files && mFile.files[0];
+    if (!f) return;
+    mQueue = [{ name: f.name, sub: '本机文件（' + mFmt(0) + '）', cover: '', src: URL.createObjectURL(f) }];
+    mQueue[0].sub = '本机文件 · ' + (f.size / 1048576).toFixed(1) + ' MB';
+    mIndex = -1;
+    mRender();
+    mHint.textContent = '正在播本机文件：' + f.name;
+    mPlayAt(0);
+  };
+  mVol.oninput = function () {
+    mAudio.volume = mVol.value / 100;
+    try { localStorage.setItem('lzh.volume', mVol.value); } catch (e) {}
+  };
+  var savedVol = null;
+  try { savedVol = localStorage.getItem('lzh.volume'); } catch (e) {}
+  if (savedVol !== null) { mVol.value = savedVol; mAudio.volume = savedVol / 100; }
+
+  mSeek.oninput = function () { mSeeking = true; };
+  mSeek.onchange = function () {
+    mSeeking = false;
+    if (isFinite(mAudio.duration)) mAudio.currentTime = mAudio.duration * mSeek.value / 1000;
+  };
+  mAudio.onloadedmetadata = function () { mDur.textContent = mFmt(mAudio.duration); };
+  mAudio.ontimeupdate = function () {
+    if (!mSeeking && isFinite(mAudio.duration) && mAudio.duration > 0) {
+      mSeek.value = Math.round(mAudio.currentTime / mAudio.duration * 1000);
+      mCur.textContent = mFmt(mAudio.currentTime);
+    }
+  };
+  mAudio.onplay = function () { mPlayBtn.textContent = '⏸'; };
+  mAudio.onpause = function () { mPlayBtn.textContent = '▶'; };
+  mAudio.onended = function () {
+    if (mLoopMode === 1 && mIndex >= 0) mPlayAt(mIndex);
+    else mStep(1);
+  };
+  mAudio.onerror = function () {
+    mHint.textContent = '这条音源放不出来（试听链接可能过期），换一首试试';
+    mPlayBtn.textContent = '▶';
+  };
 })();
 </script>
 
