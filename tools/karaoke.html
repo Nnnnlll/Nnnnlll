@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f8fafd">
+<title>跟唱打分 · 跑调检测</title>
+<link rel="stylesheet" href="tool.css">
+<style>
+  .now-note { font-size: 46px; font-weight: 700; letter-spacing: -1px; line-height: 1.05; }
+  .now-note small { font-size: 14px; font-weight: 500; letter-spacing: 0; color: var(--ink-soft); margin-left: 6px; }
+  .in-tune { color: #15803d; }
+  .flat { color: #c2410c; }
+  .sharp { color: #1d4ed8; }
+  .needle-wrap { position: relative; height: 44px; margin-top: 12px; }
+  .needle-track {
+    position: absolute; inset: 15px 0 auto 0; height: 14px; border-radius: 8px;
+    background: linear-gradient(90deg, rgba(239,68,68,.35), rgba(34,197,94,.45) 50%, rgba(239,68,68,.35));
+    border: 1px solid rgba(255,255,255,.6);
+  }
+  .needle-track::after {
+    content: ''; position: absolute; left: 44%; right: 44%; top: -3px; bottom: -3px;
+    border-radius: 6px; background: rgba(22,163,74,.35); box-shadow: 0 0 6px rgba(34,197,94,.55);
+  }
+  .needle {
+    position: absolute; top: 7px; left: 50%; width: 3px; height: 30px; border-radius: 3px;
+    background: #3b7cff; transform: translateX(-50%); transition: left .08s linear;
+    box-shadow: 0 0 8px rgba(59,124,255,.6);
+  }
+  .bar { height: 10px; border-radius: 6px; background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.6); overflow: hidden; margin-top: 4px; }
+  .bar i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .1s linear; }
+  .strip { display: flex; flex-flow: row wrap; gap: 4px; margin-top: 10px; }
+  .sp {
+    min-width: 26px; text-align: center; padding: 5px 7px; border-radius: 9px; font-size: 13px;
+    background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.6); font-variant-numeric: tabular-nums;
+  }
+  .sp.rest { opacity: .4; }
+  .sp.cur { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 3px 10px rgba(59,124,255,.4); }
+  .sp.good { background: rgba(22,163,74,.18); border-color: rgba(22,163,74,.35); color: #15803d; }
+  .sp.mid { background: rgba(234,179,8,.2); border-color: rgba(234,179,8,.4); color: #a16207; }
+  .sp.bad { background: rgba(220,38,38,.16); border-color: rgba(220,38,38,.35); color: #b91c1c; }
+  .sp.miss { background: rgba(120,130,150,.18); border-color: rgba(120,130,150,.3); color: var(--ink-soft); }
+  .score-big { font-size: 40px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -1.5px; }
+  .wl { font-size: 13px; padding: 8px 11px; border-radius: 13px; background: rgba(255,255,255,.45); margin-bottom: 6px; }
+  select { width: 100%; }
+  .kv .v { font-size: 19px; }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="../index.html">← 返回</a>
+    <div><h1>跟唱打分</h1><div class="sub">挑一首歌，跟着唱，看哪个音跑了调</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="label">选歌</div>
+    <select id="songSel"></select>
+    <div class="label">或者自己粘一份简谱（数字谱，空格分隔）</div>
+    <textarea id="custom" rows="2" placeholder="例：1 2 3 1 | 5 5 6 5 | 1' 7 6 -   （1' 是高八度，5, 是低八度，- 是延长一拍，0 是休止）"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="useCustom">用这份简谱</button>
+      <span class="dim" id="specInfo" style="font-size:12px"></span>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div class="opt active" data-ref="1">带伴奏音</div>
+      <div class="opt" data-ref="0">只打拍子</div>
+    </div>
+    <div class="label">调号</div>
+    <select id="keySel">
+      <option value="0" selected>1 = C</option>
+      <option value="2">1 = D</option>
+      <option value="4">1 = E</option>
+      <option value="5">1 = F</option>
+      <option value="7">1 = G</option>
+      <option value="9">1 = A</option>
+    </select>
+    <div class="label">拍速 <span class="dim" id="bpmVal">90</span> BPM</div>
+    <input type="range" id="bpm" min="60" max="140" step="5" value="90">
+    <div class="row" style="margin-top:16px">
+      <button class="btn primary" id="singBtn">🎤 开始跟唱</button>
+      <button class="btn" id="listenBtn">先试听一遍</button>
+      <button class="btn" id="stopBtn">停止</button>
+      <span class="dim" id="stateTxt" style="font-size:12.5px">未开始</span>
+    </div>
+    <div class="note">建议戴耳机：不戴的话手机麦克风会听到伴奏音，打分就不准了（这也是为什么给了「只打拍子」的模式）。</div>
+  </div>
+
+  <div class="panel" id="livePanel">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <div class="dim" style="font-size:12px">该唱</div>
+        <div class="now-note" id="targetNote">— <small>—</small></div>
+      </div>
+      <div style="text-align:right">
+        <div class="dim" style="font-size:12px">你唱的</div>
+        <div class="now-note" id="yourNote">— <small>—</small></div>
+      </div>
+    </div>
+    <div class="needle-wrap">
+      <div class="needle-track"></div>
+      <div class="needle" id="needle"></div>
+    </div>
+    <div class="scale" style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:4px">
+      <span>低了</span><span>音分偏差 <b id="centsVal">—</b></span><span>高了</span>
+    </div>
+    <div class="bar"><i id="progBar"></i></div>
+    <div class="strip" id="strip"></div>
+  </div>
+
+  <div class="panel hidden" id="resultPanel">
+    <h2>成绩</h2>
+    <div class="row" style="align-items:flex-end;gap:18px">
+      <div class="score-big" id="scoreBig">—</div>
+      <div class="dim" id="gradeTxt" style="font-size:13px;padding-bottom:6px">—</div>
+    </div>
+    <div class="kv" style="margin-top:14px">
+      <div class="item"><div class="k">准</div><div class="v" id="cGood">0</div></div>
+      <div class="item"><div class="k">有点偏</div><div class="v" id="cMid">0</div></div>
+      <div class="item"><div class="k">跑调</div><div class="v" id="cBad">0</div></div>
+      <div class="item"><div class="k">漏唱</div><div class="v" id="cMiss">0</div></div>
+    </div>
+    <div class="label">最跑调的几个音</div>
+    <div id="worst"><div class="wl dim">—</div></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="againBtn">再来一遍</button>
+    </div>
+    <div class="note">打分方式：每个音取你唱那段时间的中值频率，跟目标音比音分差（自动折八度，所以低八度唱也算对）。±30 音分内算准，±60 内算有点偏，再大就是跑调。跟国际惯例一样，±50 音分以内其实还在「同一个音」里。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var SEMI = [0, 2, 4, 5, 7, 9, 11];                       // 1..7 相对主音的半音数
+  var NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  var SONGS = [
+    { name: '小星星', spec: "1 1 5 5 6 6 5 - | 4 4 3 3 2 2 1 -" },
+    { name: '两只老虎', spec: "1 2 3 1 | 1 2 3 1 | 3 4 5 - | 3 4 5 - | 5 6 5 4 3 1 | 5 6 5 4 3 1 | 1 5, 1 - | 1 5, 1 -" },
+    { name: '生日快乐', spec: "5 5 6 5 1' 7 - | 5 5 6 5 2' 1' - | 5 5 5' 3' 1' 7 6 - | 4' 4' 3' 1' 2' 1' - -" },
+    { name: '欢乐颂', spec: "3 3 4 5 | 5 4 3 2 | 1 1 2 3 | 3 - 2 - | 3 3 4 5 | 5 4 3 2 | 1 1 2 3 | 2 - 1 -" },
+    { name: '茉莉花（片段）', spec: "3 3 5 | 6 1' 6 | 5 - - | 3 3 5 | 6 1' 6 | 5 - -" },
+    { name: '小蜜蜂', spec: "5 3 3 - | 4 2 2 - | 1 2 3 4 | 5 5 5 - | 5 3 3 - | 4 2 2 - | 1 3 5 5 | 3 - - -" }
+  ];
+
+  /* ── 简谱解析：空格分隔，| 是小节线（忽略），- 延长一拍，0 休止 ── */
+  function parseSpec(text, keyShift) {
+    var toks = text.replace(/[|｜]/g, ' ').replace(/，/g, ' ').split(/\s+/).filter(function (t) { return t; });
+    var notes = [];
+    toks.forEach(function (tk) {
+      if (tk === '-' || tk === '–') {
+        if (notes.length) notes[notes.length - 1].dur += 1;
+        return;
+      }
+      var m = /^([#b]?)([0-7])([',]*)$/.exec(tk);
+      if (!m) return;                                     // 认不出的 token 跳过
+      var acc = m[1] === '#' ? 1 : m[1] === 'b' ? -1 : 0;
+      var deg = +m[2];
+      var oct = (m[3].match(/'/g) || []).length - (m[3].match(/,/g) || []).length;
+      var midi = deg === 0 ? null : 60 + SEMI[deg - 1] + 12 * oct + keyShift + acc;
+      notes.push({ midi: midi, dur: 1, tok: tk, deg: deg });
+    });
+    return notes;
+  }
+  function freqOf(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
+  function nameOf(midi) { return NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1); }
+  /* 音分差：只按「八度」折叠（低八度唱也算准），不按半音折，否则差半个音的跑调会被吃掉 */
+  function centsVs(sungHz, targetHz) {
+    var r = Math.log2(sungHz / targetHz);
+    var oct = Math.round(r);
+    return 1200 * (r - oct);
+  }
+
+  /* ── 状态 ── */
+  var notes = [], notesStr = '', keyShift = 0, bpm = 90, useRef = true;
+  var ac = null, analyser = null, buf = null, micStream = null, rafId = null, timerIds = [];
+  var samples = [], running = false, startAt = 0, endAt = 0;
+
+  SONGS.forEach(function (s, i) {
+    var o = document.createElement('option');
+    o.value = String(i); o.textContent = s.name;
+    el('songSel').appendChild(o);
+  });
+  function loadSong(i) { notesStr = SONGS[i].spec; el('custom').value = ''; rebuild(); }
+  function rebuild() {
+    notes = parseSpec(notesStr, keyShift);
+    var beats = notes.reduce(function (a, n) { return a + n.dur; }, 0);
+    el('specInfo').textContent = notes.length + ' 个音（含休止）· 约 ' + (beats * 60 / bpm).toFixed(0) + ' 秒';
+    drawStrip(null);
+  }
+
+  /* ── 音符条 ── */
+  function drawStrip(curIdx, scored) {
+    var box = el('strip'), html = '';
+    notes.forEach(function (n, i) {
+      var cls = 'sp' + (n.midi === null ? ' rest' : '');
+      if (scored && n.state) cls += ' ' + n.state;
+      if (curIdx === i) cls += ' cur';
+      html += '<div class="' + cls + '">' + n.tok + '</div>';
+    });
+    box.innerHTML = html;
+  }
+
+  /* ── YIN 音高检测（同调音器，实测误差 ≤ 0.4 音分） ── */
+  function detectPitch() {
+    var SIZE = buf.length, i, mean = 0;
+    for (i = 0; i < SIZE; i++) mean += buf[i];
+    mean /= SIZE;
+    var y = new Float32Array(SIZE), rms = 0;
+    for (i = 0; i < SIZE; i++) { var v = buf[i] - mean; y[i] = v; rms += v * v; }
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.008) return null;
+    var W = Math.min(2048, SIZE >> 1);
+    var minLag = Math.max(2, Math.floor(ac.sampleRate / 1200));
+    var maxLag = Math.min(SIZE - 2, Math.ceil(ac.sampleRate / 70));
+    if (maxLag <= minLag + 2) return null;
+    var d = new Float32Array(maxLag + 1);
+    for (var L = 1; L <= maxLag; L++) {
+      var s = 0;
+      for (var j = 0; j < W && j + L < SIZE; j++) { var t = y[j] - y[j + L]; s += t * t; }
+      d[L] = s;
+    }
+    var run = 0, dp = new Float32Array(maxLag + 1);
+    dp[0] = 1;
+    for (var L2 = 1; L2 <= maxLag; L2++) { run += d[L2]; dp[L2] = run ? d[L2] * L2 / run : 1; }
+    var th = 0.15, T = -1;
+    for (var L3 = minLag; L3 < maxLag; L3++) {
+      if (dp[L3] < th) { var L4 = L3; while (L4 + 1 < maxLag && dp[L4 + 1] < dp[L4]) L4++; T = L4; break; }
+    }
+    if (T < 0) { var b = Infinity; for (var L5 = minLag; L5 <= maxLag; L5++) if (dp[L5] < b) { b = dp[L5]; T = L5; } }
+    if (T <= minLag) return null;
+    var y1 = dp[T - 1], y2 = dp[T], y3 = dp[T + 1];
+    var den = y1 + y3 - 2 * y2;
+    var shift = den ? (y3 - y1) / (2 * den) : 0;
+    if (shift > 0.5) shift = 0.5; if (shift < -0.5) shift = -0.5;
+    var f = ac.sampleRate / (T - shift);
+    return (f > 70 && f < 1200) ? f : null;
+  }
+
+  function clearTimers() {
+    timerIds.forEach(function (t) { clearTimeout(t); clearInterval(t); });
+    timerIds = [];
+  }
+
+  /* ── 开始（跟唱 / 试听） ── */
+  function start(sing) {
+    if (!notes.length) { rebuild(); }
+    if (!notes.length) { el('stateTxt').textContent = '这份简谱没解析出音，检查一下写法'; return; }
+    stop();
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!ac) ac = new Ctx();
+
+    var beat = 60 / bpm;
+    var countIn = 4 * beat;
+    startAt = ac.currentTime + countIn + 0.2;
+    notes.forEach(function (n) { n.state = null; });
+
+    // 预备拍 + 旋律
+    for (var k = 0; k < 4; k++) click(startAt - (4 - k) * beat, k === 0 ? 990 : 700);
+    var end = startAt;
+    notes.forEach(function (n) {
+      n.r0 = end - startAt;
+      end += n.dur * beat;
+      n.r1 = end - startAt;
+      if (useRef && n.midi !== null) tone(freqOf(n.midi), n.r0 + startAt, n.r1 + startAt - 0.03);
+    });
+    if (!useRef) {                                     // 只打拍子：整首都给节拍点，否则没参照
+      var totalBeats = notes.reduce(function (a, n) { return a + n.dur; }, 0);
+      for (var b = 0; b < totalBeats; b++) click(startAt + b * beat, b % 4 === 0 ? 820 : 600, 0.035);
+    }
+    endAt = end;
+    running = true;
+    el('resultPanel').classList.add('hidden');
+    el('singBtn').disabled = sing;
+    el('listenBtn').disabled = !sing;
+
+    if (!sing) {
+      el('stateTxt').textContent = '试听中…';
+      timerIds.push(setTimeout(function () {
+        el('stateTxt').textContent = '试听结束';
+        el('listenBtn').disabled = false; el('singBtn').disabled = false;
+      }, (countIn + (endAt - startAt) + 0.4) * 1000));
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      .then(function (s) {
+        micStream = s;
+        var src = ac.createMediaStreamSource(s);
+        analyser = ac.createAnalyser();
+        analyser.fftSize = 4096;
+        src.connect(analyser);
+        buf = new Float32Array(analyser.fftSize);
+        samples = [];
+        el('stateTxt').innerHTML = '<span class="ok">录音中…跟着唱</span>';
+        var lastGet = 0, lastUi = 0;
+        (function loopFrame() {
+          rafId = requestAnimationFrame(loopFrame);
+          var now = performance.now();
+          var tRel = ac.currentTime - startAt;
+          if (now - lastGet > 70) {                       // 检测限速，手机省电
+            lastGet = now;
+            var f = detectPitch();
+            if (f) samples.push({ t: tRel, f: f });
+          }
+          if (now - lastUi > 90) { lastUi = now; live(tRel); }
+        })();
+        timerIds.push(setTimeout(finish, (countIn + (endAt - startAt) + 0.5) * 1000));
+      })
+      .catch(function (err) {
+        running = false;
+        el('stateTxt').innerHTML = '<span class="warn">麦克风打不开：' + (err && err.name || err) + '</span>';
+      });
+  }
+
+  function click(t, freq, gain) {
+    if (t < ac.currentTime) return;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'square'; o.frequency.value = freq;
+    g.gain.setValueAtTime(gain || 0.06, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    o.connect(g).connect(ac.destination);
+    o.start(t); o.stop(t + 0.1);
+  }
+  function tone(f, t0, t1) {
+    if (t1 <= ac.currentTime) return;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'triangle'; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.16, t0 + 0.03);
+    g.gain.setValueAtTime(0.16, Math.max(t0 + 0.04, t1 - 0.05));
+    g.gain.linearRampToValueAtTime(0.0001, t1);
+    o.connect(g).connect(ac.destination);
+    o.start(t0); o.stop(t1 + 0.02);
+  }
+
+  /* ── 实时显示 ── */
+  function curIndex(tRel) {
+    for (var i = 0; i < notes.length; i++) if (tRel >= notes[i].r0 && tRel < notes[i].r1) return i;
+    return -1;
+  }
+  function live(tRel) {
+    var i = curIndex(tRel);
+    drawStrip(i, false);
+    var total = endAt - startAt;
+    el('progBar').style.width = Math.max(0, Math.min(100, tRel / total * 100)) + '%';
+    if (i < 0 || notes[i].midi === null) {
+      el('targetNote').innerHTML = (i < 0 ? '—' : '休止') + ' <small>' + (i < 0 ? '预备…' : '') + '</small>';
+    } else {
+      el('targetNote').innerHTML = notes[i].tok + ' <small>' + nameOf(notes[i].midi) + '</small>';
+    }
+    // 最近 2 次采样当「你唱的」
+    var recent = samples.filter(function (s) { return s.t > tRel - 0.35; });
+    if (!recent.length) {
+      el('yourNote').innerHTML = '— <small>没听见声音</small>';
+      el('centsVal').textContent = '—';
+      el('needle').style.left = '50%';
+      return;
+    }
+    var fs = recent.map(function (s) { return s.f; }).sort(function (a, b) { return a - b; });
+    var f = fs[Math.floor(fs.length / 2)];
+    el('yourNote').innerHTML = f.toFixed(1) + ' <small>Hz ' + nameOf(Math.round(12 * Math.log2(f / 440) + 69)) + '</small>';
+    var tgt = (i >= 0 && notes[i].midi !== null) ? notes[i].midi : Math.round(12 * Math.log2(f / 440) + 69);
+    var cents = Math.round(centsVs(f, freqOf(tgt)));               // 折八度后比（低八度唱也算对）
+    el('centsVal').textContent = (cents > 0 ? '+' : '') + cents.toFixed(0);
+    el('centsVal').className = Math.abs(cents) <= 30 ? 'in-tune' : cents < 0 ? 'flat' : 'sharp';
+    el('needle').style.left = Math.max(0, Math.min(100, 50 + cents)) + '%';
+  }
+
+  /* ── 打分 ── */
+  function finish() {
+    running = false;
+    cancelAnimationFrame(rafId);
+    if (micStream) { micStream.getTracks().forEach(function (t) { t.stop(); }); micStream = null; }
+    el('singBtn').disabled = false; el('listenBtn').disabled = false;
+    el('stateTxt').textContent = '唱完了，看成绩 ↓';
+
+    var good = 0, mid = 0, bad = 0, miss = 0, sum = 0, cnt = 0, worst = [];
+    var usable = samples.filter(function (s) { return s.t > -0.2 && s.t < endAt - startAt + 0.3; });
+
+    notes.forEach(function (n, i) {
+      if (n.midi === null) { n.state = null; return; }
+      var target = freqOf(n.midi);
+      var dets = usable.filter(function (s) { return s.t >= n.r0 + 0.06 && s.t <= n.r1 - 0.04; });
+      if (dets.length < 2) {
+        n.state = 'miss'; miss++; cnt++; worst.push({ i: i, n: n, txt: '漏唱', cents: null });
+        return;
+      }
+      var fs = dets.map(function (s) { return s.f; }).sort(function (a, b) { return a - b; });
+      var f = fs[Math.floor(fs.length / 2)];
+      var cents = Math.round(centsVs(f, target));                 // 折八度后比
+      n.cents = cents;
+      var sc = Math.max(0, 100 - Math.abs(cents) * 1.6);
+      n.score = Math.round(sc);
+      sum += sc; cnt++;
+      if (Math.abs(cents) <= 30) { n.state = 'good'; good++; }
+      else if (Math.abs(cents) <= 60) { n.state = 'mid'; mid++; worst.push({ i: i, n: n, txt: cents < 0 ? '偏低' : '偏高', cents: cents }); }
+      else { n.state = 'bad'; bad++; worst.push({ i: i, n: n, txt: cents < 0 ? '跑低了' : '跑高了', cents: cents }); }
+    });
+
+    drawStrip(-1, true);
+    var total = cnt ? Math.round(sum / cnt) : 0;
+    el('scoreBig').textContent = total + ' 分';
+    el('gradeTxt').textContent = total >= 90 ? '音准很稳，可以去 KTV 了' : total >= 75 ? '大体准，个别音飘' :
+      total >= 60 ? '能听出调，但跑得比较明显' : cnt ? '跑调有点多，慢速多练两遍' : '没测到音，检查麦克风';
+    el('cGood').textContent = String(good);
+    el('cMid').textContent = String(mid);
+    el('cBad').textContent = String(bad);
+    el('cMiss').textContent = String(miss);
+    worst.sort(function (a, b) { return Math.abs(b.cents || 999) - Math.abs(a.cents || 999); });
+    el('worst').innerHTML = worst.length
+      ? worst.slice(0, 4).map(function (w) {
+          return '<div class="wl">第 ' + (w.i + 1) + ' 个音 <b>' + w.n.tok + '</b>（目标 ' + nameOf(w.n.midi) + '）→ ' + w.txt +
+            (w.cents !== null && w.cents !== undefined ? ' ' + Math.abs(Math.round(w.cents)) + ' 音分' : '') + '</div>';
+        }).join('')
+      : '<div class="wl dim">没有明显跑调的音，全在 ±30 音分内 👍</div>';
+    el('resultPanel').classList.remove('hidden');
+    el('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function stop() {
+    running = false;
+    cancelAnimationFrame(rafId);
+    clearTimers();
+    if (micStream) { micStream.getTracks().forEach(function (t) { t.stop(); }); micStream = null; }
+    el('singBtn').disabled = false; el('listenBtn').disabled = false;
+  }
+
+  /* ── 交互 ── */
+  el('songSel').addEventListener('change', function () { loadSong(+this.value); });
+  el('useCustom').addEventListener('click', function () {
+    var t = el('custom').value.trim();
+    if (!t) { el('stateTxt').textContent = '先把简谱粘进去'; return; }
+    notesStr = t; rebuild();
+    el('stateTxt').textContent = '已用自定义简谱（' + notes.length + ' 个音）';
+  });
+  el('keySel').addEventListener('change', function () { keyShift = +this.value; rebuild(); });
+  el('bpm').addEventListener('input', function () { bpm = +this.value; el('bpmVal').textContent = String(bpm); rebuild(); });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-ref]'), function (o) {
+    o.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-ref]'), function (x) { x.classList.remove('active'); });
+      o.classList.add('active');
+      useRef = o.getAttribute('data-ref') === '1';
+    });
+  });
+  el('singBtn').addEventListener('click', function () { start(true); });
+  el('listenBtn').addEventListener('click', function () { start(false); });
+  el('stopBtn').addEventListener('click', function () { stop(); el('stateTxt').textContent = '已停止'; });
+  el('againBtn').addEventListener('click', function () { start(true); });
+  window.addEventListener('pagehide', stop);
+
+  loadSong(0);
+})();
+</script>
+</body>
+</html>

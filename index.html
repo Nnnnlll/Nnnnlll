@@ -244,55 +244,55 @@
   .hint { font-size: 11px; color: var(--ink-soft); opacity: .8; margin-top: 10px; line-height: 1.5; }
   #fpsText { font-size: 11px; color: var(--ink-soft); opacity: .7; margin-top: 16px; text-align: center; }
   /* ── 音乐播放器 ── */
-  /* 音乐播放器：宽度缩 30%，居中 */
-  .player { margin: 26px auto 0; width: 70%; padding: 20px; border-radius: 26px; }
-  .player .title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
-  .m-search { display: flex; gap: 8px; }
+  /* 宽度缩 30%（窄屏保底 320px 不至于挤坏），同时高度方向压掉约 30% */
+  .player { margin: 20px auto 0; width: 70%; min-width: 320px; max-width: 100%; padding: 14px; border-radius: 24px; }
+  .player .title { font-size: 14px; font-weight: 600; margin-bottom: 9px; }
+  .m-search { display: flex; gap: 6px; }
   .m-search input {
-    flex: 1; min-width: 0; padding: 11px 14px; border-radius: 16px; font-size: 13px;
+    flex: 1; min-width: 0; padding: 8px 12px; border-radius: 14px; font-size: 13px;
     color: var(--ink); font-family: inherit; outline: none;
     border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.28);
     backdrop-filter: blur(8px);
   }
   .m-search input::placeholder { color: var(--ink-soft); }
   .m-search button, .m-btn {
-    padding: 11px 14px; border-radius: 16px; font-size: 13px; cursor: pointer;
+    padding: 8px 12px; border-radius: 14px; font-size: 13px; cursor: pointer;
     color: var(--ink); font-family: inherit; white-space: nowrap;
     border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.28); transition: all .16s;
   }
   .m-search button:hover, .m-btn:hover { background: rgba(255,255,255,.45); }
   .m-btn:disabled { opacity: .4; cursor: default; }
-  .m-hint { margin-top: 10px; font-size: 11px; color: var(--ink-soft); opacity: .85; line-height: 1.5; }
-  .m-list { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow: auto; }
+  .m-hint { margin-top: 7px; font-size: 11px; color: var(--ink-soft); opacity: .85; line-height: 1.45; }
+  .m-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; max-height: 230px; overflow: auto; }
   .m-item {
-    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; font: inherit; color: inherit;
-    padding: 8px 10px; border-radius: 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; color: inherit;
+    padding: 6px 9px; border-radius: 13px; cursor: pointer;
     border: 1px solid transparent; background: rgba(255,255,255,.22); transition: background .16s;
   }
   .m-item:hover { background: rgba(255,255,255,.45); }
   .m-item.playing { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .m-item img { width: 42px; height: 42px; border-radius: 10px; flex: none; object-fit: cover; background: rgba(0,0,0,.12); }
+  .m-item img { width: 36px; height: 36px; border-radius: 9px; flex: none; object-fit: cover; background: rgba(0,0,0,.12); }
   .m-item .m-txt { min-width: 0; }
   .m-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-sub { font-size: 11px; opacity: .75; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-now { margin-top: 14px; padding: 12px; border-radius: 18px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.24); }
-  .m-now-top { display: flex; align-items: center; gap: 10px; }
-  .m-now-top img { width: 46px; height: 46px; border-radius: 12px; flex: none; object-fit: cover; }
+  .m-sub { font-size: 11px; opacity: .75; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-now { margin-top: 10px; padding: 9px; border-radius: 16px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.24); }
+  .m-now-top { display: flex; align-items: center; gap: 9px; }
+  .m-now-top img { width: 38px; height: 38px; border-radius: 10px; flex: none; object-fit: cover; }
   .m-now-info { min-width: 0; }
   .m-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-artist { font-size: 11px; color: var(--ink-soft); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-bar { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .m-artist { font-size: 11px; color: var(--ink-soft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-bar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
   .m-time { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; flex: none; }
   .m-seek { flex: 1; min-width: 0; }
   input[type=range] { accent-color: var(--accent); }
-  .m-ctrl { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .m-ctrl { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
   .m-play {
-    width: 52px; height: 52px; border-radius: 50%; font-size: 17px; cursor: pointer;
+    width: 44px; height: 44px; border-radius: 50%; font-size: 16px; cursor: pointer;
     border: 1px solid var(--accent); background: var(--accent); color: #fff;
     box-shadow: 0 6px 16px rgba(59,124,255,.35);
   }
   .m-ctrl .m-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .m-vol { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 11px; color: var(--ink-soft); }
+  .m-vol { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; color: var(--ink-soft); }
   .m-vol input { flex: 1; min-width: 0; }
   #mAudio { display: none; }
 
@@ -343,6 +343,10 @@
 </style>
 </head>
 <body>
+
+<script>/* 首次访问默认暗色：在渲染前就加上，避免闪白 */
+  try { if ((localStorage.getItem('lzh.theme') || 'dark') === 'dark') document.body.classList.add('dark'); } catch (e) {}
+</script>
 
 <div class="bg">
   <span class="blob b1"></span><span class="blob b2"></span>
@@ -440,6 +444,12 @@
       <div class="icon">🎚️</div>
       <div class="name">分贝 / 调音</div>
       <div class="desc">噪音检测 · 乐器调音</div>
+    </a>
+
+    <a class="card glass lite" href="tools/karaoke.html">
+      <div class="icon">🎤</div>
+      <div class="name">跟唱打分</div>
+      <div class="desc">跑调检测 · 逐音打分</div>
     </a>
 
     <a class="card glass lite" href="#" onclick="openGame(); return false;">
@@ -649,6 +659,7 @@
       Array.prototype.forEach.call(typeOpts, function (o) { o.classList.remove('active'); });
       opt.classList.add('active');
       currentType = opt.getAttribute('data-type');
+      try { localStorage.setItem('lzh.float', currentType); } catch (e) {}
       renderFloat();
     };
   });
@@ -659,9 +670,35 @@
       Array.prototype.forEach.call(countOpts, function (o) { o.classList.remove('active'); });
       opt.classList.add('active');
       currentCount = parseInt(opt.getAttribute('data-count'), 10);
+      try { localStorage.setItem('lzh.floatCount', String(currentCount)); } catch (e) {}
       renderFloat();
     };
   });
+
+  /* ── 首次访问默认：暗色 + 雪花 ── */
+  try {
+    if (!localStorage.getItem('lzh.theme')) localStorage.setItem('lzh.theme', 'dark');
+    if (localStorage.getItem('lzh.theme') === 'dark') {
+      document.body.classList.add('dark');
+      darkSwitch.classList.add('on');
+      var metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) metaTheme.setAttribute('content', '#10141c');
+    }
+    var prefFloat = localStorage.getItem('lzh.float');
+    if (!prefFloat) { prefFloat = 'snow'; localStorage.setItem('lzh.float', 'snow'); }
+    currentType = prefFloat;
+    Array.prototype.forEach.call(typeOpts, function (o) {
+      o.classList.toggle('active', o.getAttribute('data-type') === prefFloat);
+    });
+    var prefCount = localStorage.getItem('lzh.floatCount');
+    if (prefCount) {
+      currentCount = parseInt(prefCount, 10);
+      Array.prototype.forEach.call(countOpts, function (o) {
+        o.classList.toggle('active', o.getAttribute('data-count') === String(prefCount));
+      });
+    }
+    renderFloat();
+  } catch (e) {}
 
   var glassOpts = document.querySelectorAll('#glassOpts .opt');
   Array.prototype.forEach.call(glassOpts, function (opt) {
@@ -676,6 +713,10 @@
   darkSwitch.onclick = function () {
     darkSwitch.classList.toggle('on');
     document.body.classList.toggle('dark');
+    var dark = document.body.classList.contains('dark');
+    try { localStorage.setItem('lzh.theme', dark ? 'dark' : 'light'); } catch (e) {}
+    var mt = document.querySelector('meta[name="theme-color"]');
+    if (mt) mt.setAttribute('content', dark ? '#10141c' : '#f8fafd');
   };
 
   bgSwitch.onclick = function () {
