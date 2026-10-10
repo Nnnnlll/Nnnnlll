@@ -1,91 +1,91 @@
 <!DOCTYPE html>
-<HTML lang=zh-CN>.card .name { 词YYY. 张报经素;譗YY金;} lang=zh-CN>
-htmlinfinite>
-<元 charset=八强>
-<元 名称=视港 内容=width=device-width,初始-scale=1.0>
-<标题>法兰西 张</标题>
-<风格>
-  * { 保证金: 0; 填充: 0; 箱体尺寸: 边框; }
-  身体 {
-    字体家族: 苹果系统, 平方, 微软 YaHei, 无衬线;
-    背景: 线性级(135深度#eef1f7 0%#e3e9f5 100%);
-    颜色: #222; 填充: 20像素; 最低高度: 100vh;
-    职位: 相对; 溢出x: 隐藏;
-    过渡: 背景 .4s, 颜色 .4s;
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大大小小</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #eef1f7 0%, #e3e9f5 100%);
+    color: #222; padding: 20px; min-height: 100vh;
+    position: relative; overflow-x: hidden;
+    transition: background .4s, color .4s;
   }
-  #floatLayer { 职位: 固定; 设置: 0; 分量事件: 无; 溢出: 隐藏; z指数: 0; }
-  .float { 职位: 绝对; }
-  .泡沫 
-    边境-无线电: 50%;
-    背景: 径向(圈 在 32% 28%, 格巴(255,255,255,0.95) 0%, 格巴(210,235,255,0.55) 30%, 格巴(150,200,255,0.25) 65%, 格巴(120,170,255,0.08) 100%);
-    箱形阴影: 设置 -3像素 -4像素 8像素 格巴(255,255,255,0.7), 设置 3像素 4像素 10像素 格巴(90,140,220,0.25), 0 0 8像素 格巴(180,215,255,0.4);
-    动画: 浮点数 线性 无限;
- }
+  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .float { position: absolute; }
+  .bubble {
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(210,235,255,0.55) 30%, rgba(150,200,255,0.25) 65%, rgba(120,170,255,0.08) 100%);
+    box-shadow: inset -3px -4px 8px rgba(255,255,255,0.7), inset 3px 4px 10px rgba(90,140,220,0.25), 0 0 8px rgba(180,215,255,0.4);
+    animation: floatUp linear infinite;
+  }
  .leaf {
   width: 14px; height: 14px;
+  background: radial-gradient(circle at 30% 30%, #ffcf7a, #e08a2e 60%, #a85a12);
+  border-radius: 0 70% 0 70%;
+  box-shadow: 0 0 4px rgba(180,120,40,0.5);
   animation: fallSpin linear infinite;
-  边界-无线电:0 70% 0%;
-  框阴影:0 0 4px rgba(180,120,40,0.5);
-  动画:fallSpin 线性无限;
 }
-.rain
-  宽度:2像素;高度:16像素;
-  背景:线性级(至底部,rgba(180,215,255,0.1)),rgba(120,180,255,0.85));
-  边框-无线电:2像素;
-  框状阴影:0 0 4px rgba(140,190,255,0.6);
-  动画:雨水线性无限;
+.rain {
+  width: 2px; height: 16px;
+  background: linear-gradient(to bottom, rgba(180,215,255,0.1), rgba(120,180,255,0.85));
+  border-radius: 2px;
+  box-shadow: 0 0 4px rgba(140,190,255,0.6);
+  animation: rainFall linear infinite;
 }
-.snow
-  宽度:12像素;高度:12像素;
-  背景:径向梯度(圆形,#ffffff 0%,#e8f4ff 60%,rgba(230,245,255,0.2)100%);
-  边界-无线电:50%;
-  框状阴影:0 0 6px rgba(255,255,255,0.9),0 0 12px rgba(200,230,255,0.6);
-  动画:fallSpin 线性无限;
+.snow {
+  width: 12px; height: 12px;
+  background: radial-gradient(circle, #ffffff 0%, #e8f4ff 60%, rgba(230,245,255,0.2) 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(255,255,255,0.9), 0 0 12px rgba(200,230,255,0.6);
+  animation: fallSpin linear infinite;
 }
-.star
-  宽度:10像素;高度:10像素;
-  背景:径向级(圆形,#fff7c2 0%,#ffd84a 55%,rgba(255,200,60,0.1)100%);
-  小径:多边形(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50%,21% 91%,32% 57%,3%,35%);
-  箱形阴影:0 0 8px rgba(255,220,90,0.9);
-  动画:fallSpin 线性无限;
+.star {
+  width: 10px; height: 10px;
+  background: radial-gradient(circle, #fff7c2 0%, #ffd84a 55%, rgba(255,200,60,0.1) 100%);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  box-shadow: 0 0 8px rgba(255,220,90,0.9);
+  animation: fallSpin linear infinite;
 }
-.heart 
-  宽度:14像素;高度:14像素;
-  背景:径向级(占35%,比例为35%),#ff9bb0,#ff4d6d 60%,#c81e3f;
-  剪切路径:路径('M7 13 C-2 6 0 0 0 0 0 C6 0 7 2 2 2 C7 2 8 0 10 C14 0 16 6 7 13 Z');
-  箱形阴影:0 0 6 像素 rgba(255,90,120,0.7);
-  动画:fallSpin 线性无限;
+.heart {
+  width: 14px; height: 14px;
+  background: radial-gradient(circle at 35% 35%, #ff9bb0, #ff4d6d 60%, #c81e3f);
+  clip-path: path('M7 13 C-2 6 0 0 4 0 C6 0 7 2 7 2 C7 2 8 0 10 0 C14 0 16 6 7 13 Z');
+  box-shadow: 0 0 6px rgba(255,90,120,0.7);
+  animation: fallSpin linear infinite;
 }
-@keyframes floatUp {
+ @keyframes floatUp {
   0% { transform: translateY(0) scale(1) rotate(0deg); opacity: .7; }
- display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 14px; 
+  100% { transform: translateY(-115vh) scale(1.15) rotate(20deg); opacity: 0; }
 }
-@keyframes falst 旋转
-  0% { 变换:translateY(-12vh) root(0deg);不透明度:.95;}
-  100%{变换:翻译Y(112vh)旋转(360度);不透明度:0;}
+@keyframes fallSpin {
+  0% { transform: translateY(-12vh) rotate(0deg); opacity: .95; }
+  100% { transform: translateY(112vh) rotate(360deg); opacity: 0; }
 }
-@keyframes 雨量
-  0% { transflate:translateY(-12vh);不透明度:.85;}
-  100%{ 变换:翻译Y(112vh);不透明度:0;}
+@keyframes rainFall {
+  0% { transform: translateY(-12vh); opacity: .85; }
+  100% { transform: translateY(112vh); opacity: 0; }
 }
-.wrap { 位置:相对;z-index:2;}
-字体大小:22像素;边距:6px;}
-.sub { 颜色:#888;字体大小:13像素;边距:20px;}
-.section-title { 字体大小:15像素;字体重量:600;边距:22px 0 12px;颜色:#444;}
-.grid 
+.wrap { position: relative; z-index: 2; }
+h1 { font-size: 22px; margin-bottom: 6px; }
+.sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+.section-title { font-size: 15px; font-weight: 600; margin: 22px 0 12px; color: #444; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 14px; }
  .card {
   background: linear-gradient(145deg,#fff,#f0f3f9);
-.card .desc 
-  盒形阴影:6px 6px 14px rgba(0,0,0.12),-6px -6px 14px rgba(255,255,255,0.9);
-.card .name { 字体大小:15像素;字体重量:600;}
-  图璺睗;兰斯标:指针
-.card .name { 字体大小小经素;譗体金:600;}
-.card:hover { transciger: translateY(-3px); 十像素 10px 20px rgba(0,0,0.16,8px 18px rgba(255,255,255,0.95);
-.card .name { 词YYY. 张报经素;譗YY金;}
-.icon { 译YYY.026px;边距�画部:8px;}
-.card .name { 词YYY。 张报
-.card.desc 
-#settingBtn {
+  border-radius: 14px; padding: 16px; text-decoration: none; color: inherit;
+  box-shadow: 6px 6px 14px rgba(0,0,0,0.12), -6px -6px 14px rgba(255,255,255,0.9);
+  transition: transform .15s, box-shadow .15s, background .4s, color .4s;
+  display: block; cursor: pointer;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 10px 10px 20px rgba(0,0,0,0.16), -8px -8px 18px rgba(255,255,255,0.95); }
+.card:active { transform: translateY(1px) scale(0.98); box-shadow: inset 4px 4px 10px rgba(0,0,0,0.12), inset -4px -4px 10px rgba(255,255,255,0.9); }
+.card .icon { font-size: 26px; margin-bottom: 8px; }
+.card .name { font-size: 15px; font-weight: 600; }
+.card .desc { font-size: 12px; color: #999; line-height: 1.4; margin-top: 2px; }
+ #settingBtn {
   position: fixed; top: 16px; right: 16px; width: 42px; height: 42px;
   border-radius: 50%; border: none; background: #fff; font-size: 20px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 30;
@@ -138,7 +138,7 @@ htmlinfinite>
   body.dark .sub, body.dark .now-playing { color: #8894a8; }
 </style>
 </head>
- <body>
+<body>
 
 <div id="floatLayer"></div>
 
