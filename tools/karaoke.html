@@ -47,45 +47,55 @@
 </style>
 </head>
 <body>
+<script src="theme.js"></script>
 <div class="blob b1"></div><div class="blob b2"></div>
 
 <div class="wrap">
   <div class="top">
     <a class="back" href="../index.html">← 返回</a>
+    <button id="themeBtn" class="back ghost" title="切换深浅色">🌙</button>
     <div><h1>跟唱打分</h1><div class="sub">挑一首歌，跟着唱，看哪个音跑了调</div></div>
   </div>
 
+<!-- 第一板块：压得很扁，尽量让下面的「实时区」露出来 -->
   <div class="panel">
-    <div class="label">选歌</div>
-    <select id="songSel"></select>
-    <div class="label">或者自己粘一份简谱（数字谱，空格分隔）</div>
-    <textarea id="custom" rows="2" placeholder="例：1 2 3 1 | 5 5 6 5 | 1' 7 6 -   （1' 是高八度，5, 是低八度，- 是延长一拍，0 是休止）"></textarea>
+    <div class="row" style="gap:8px">
+      <select id="songSel" style="flex:2 1 160px; min-width:0"></select>
+      <select id="keySel" style="flex:1 1 90px; min-width:0">
+        <option value="0" selected>1 = C</option>
+        <option value="2">1 = D</option>
+        <option value="4">1 = E</option>
+        <option value="5">1 = F</option>
+        <option value="7">1 = G</option>
+        <option value="9">1 = A</option>
+      </select>
+    </div>
+    <div class="row" style="margin-top:8px;gap:6px;flex-wrap:nowrap">
+      <span class="dim" style="font-size:12px;flex:none">拍速</span>
+      <input type="range" id="bpm" min="60" max="140" step="5" value="90" style="flex:1;min-width:0">
+      <span class="dim" id="bpmVal" style="font-size:12px;flex:none">90</span>
+      <div class="opt active" data-ref="1" style="padding:5px 10px;font-size:12px;flex:none">伴奏</div>
+      <div class="opt" data-ref="0" style="padding:5px 10px;font-size:12px;flex:none">只拍子</div>
+    </div>
     <div class="row" style="margin-top:10px">
-      <button class="btn" id="useCustom">用这份简谱</button>
-      <span class="dim" id="specInfo" style="font-size:12px"></span>
-    </div>
-    <div class="row" style="margin-top:14px">
-      <div class="opt active" data-ref="1">带伴奏音</div>
-      <div class="opt" data-ref="0">只打拍子</div>
-    </div>
-    <div class="label">调号</div>
-    <select id="keySel">
-      <option value="0" selected>1 = C</option>
-      <option value="2">1 = D</option>
-      <option value="4">1 = E</option>
-      <option value="5">1 = F</option>
-      <option value="7">1 = G</option>
-      <option value="9">1 = A</option>
-    </select>
-    <div class="label">拍速 <span class="dim" id="bpmVal">90</span> BPM</div>
-    <input type="range" id="bpm" min="60" max="140" step="5" value="90">
-    <div class="row" style="margin-top:16px">
       <button class="btn primary" id="singBtn">🎤 开始跟唱</button>
-      <button class="btn" id="listenBtn">先试听一遍</button>
+      <button class="btn" id="listenBtn">试听</button>
       <button class="btn" id="stopBtn">停止</button>
-      <span class="dim" id="stateTxt" style="font-size:12.5px">未开始</span>
+      <span class="dim" id="specInfo" style="font-size:11.5px"></span>
     </div>
-    <div class="note">建议戴耳机：不戴的话手机麦克风会听到伴奏音，打分就不准了（这也是为什么给了「只打拍子」的模式）。</div>
+    <div class="dim" id="stateTxt" style="font-size:12px;margin-top:7px">未开始 · 点「开始跟唱」会要麦克风权限</div>
+
+    <details style="margin-top:8px">
+      <summary class="dim" style="font-size:12px;cursor:pointer">自己粘简谱 / 玩法说明</summary>
+      <textarea id="custom" rows="2" style="margin-top:8px" placeholder="例：1 2 3 1 | 5 5 6 5 | 1' 7 6 -   （1' 高八度，5, 低八度，- 延长一拍，0 休止）"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="useCustom">用这份简谱</button>
+      </div>
+      <div class="note">
+        两种模式：① 带伴奏（建议戴耳机，不然麦克风会收到伴奏音）；② 只打拍子（整首都有节拍点，你按谱子唱）。<br>
+        打分：每个音取你唱那段时间的中值频率，跟目标音比音分，自动折八度（低八度唱也算准）。±30 音分内算准，±60 内算有点偏，再大就是跑调；没唱到算漏唱。
+      </div>
+    </details>
   </div>
 
   <div class="panel" id="livePanel">
@@ -108,6 +118,7 @@
     </div>
     <div class="bar"><i id="progBar"></i></div>
     <div class="strip" id="strip"></div>
+    <div class="dim" id="micLevel" style="font-size:11.5px;margin-top:8px">麦克风：未开启</div>
   </div>
 
   <div class="panel hidden" id="resultPanel">
@@ -203,40 +214,83 @@
     box.innerHTML = html;
   }
 
-  /* ── YIN 音高检测（同调音器，实测误差 ≤ 0.4 音分） ── */
-  function detectPitch() {
-    var SIZE = buf.length, i, mean = 0;
-    for (i = 0; i < SIZE; i++) mean += buf[i];
+  /* ── YIN 音高检测（与调音器同一套：长窗 + 降采样×2 + 八度守卫 + 抛物线插值） ── */
+  var _scr = null, _work = null, _d = null, _dp = null;
+
+  function yinOn(x, sr, fmin, fmax, dec, th) {
+    var y, sr2 = sr;
+    if (dec > 1) {                                  // 盒式平均 + 抽取
+      var m = Math.floor(x.length / dec);
+      if (!_scr || _scr.length < m) _scr = new Float32Array(m);
+      for (var i2 = 0; i2 < m; i2++) {
+        var s0 = 0;
+        for (var k0 = 0; k0 < dec; k0++) s0 += x[i2 * dec + k0];
+        _scr[i2] = s0 / dec;
+      }
+      y = _scr.subarray(0, m);
+      sr2 = sr / dec;
+    } else {
+      y = x;
+    }
+    var SIZE = y.length, i, mean = 0;
+    for (i = 0; i < SIZE; i++) mean += y[i];
     mean /= SIZE;
-    var y = new Float32Array(SIZE), rms = 0;
-    for (i = 0; i < SIZE; i++) { var v = buf[i] - mean; y[i] = v; rms += v * v; }
+    if (!_work || _work.length < SIZE) _work = new Float32Array(SIZE);
+    var z = _work, rms = 0, v;
+    for (i = 0; i < SIZE; i++) { v = y[i] - mean; z[i] = v; rms += v * v; }
     rms = Math.sqrt(rms / SIZE);
-    if (rms < 0.008) return null;
-    var W = Math.min(2048, SIZE >> 1);
-    var minLag = Math.max(2, Math.floor(ac.sampleRate / 1200));
-    var maxLag = Math.min(SIZE - 2, Math.ceil(ac.sampleRate / 70));
+    if (rms < 0.006) return null;
+
+    var minLag = Math.max(2, Math.floor(sr2 / fmax));
+    var maxLag = Math.min(SIZE - 8, Math.ceil(sr2 / fmin));
     if (maxLag <= minLag + 2) return null;
-    var d = new Float32Array(maxLag + 1);
+    var W = Math.min(SIZE - maxLag, Math.max(2048, maxLag * 4));
+    if (W < 512) return null;
+    if (!_d || _d.length < maxLag + 1) { _d = new Float32Array(maxLag + 1); _dp = new Float32Array(maxLag + 1); }
+    var d = _d, dp = _dp;
     for (var L = 1; L <= maxLag; L++) {
       var s = 0;
-      for (var j = 0; j < W && j + L < SIZE; j++) { var t = y[j] - y[j + L]; s += t * t; }
+      for (var j = 0; j < W; j++) { var t = z[j] - z[j + L]; s += t * t; }
       d[L] = s;
     }
-    var run = 0, dp = new Float32Array(maxLag + 1);
+    var run = 0;
     dp[0] = 1;
     for (var L2 = 1; L2 <= maxLag; L2++) { run += d[L2]; dp[L2] = run ? d[L2] * L2 / run : 1; }
-    var th = 0.15, T = -1;
+
+    var T = -1;
     for (var L3 = minLag; L3 < maxLag; L3++) {
-      if (dp[L3] < th) { var L4 = L3; while (L4 + 1 < maxLag && dp[L4 + 1] < dp[L4]) L4++; T = L4; break; }
+      if (dp[L3] < th) {
+        var L4 = L3;
+        while (L4 + 1 < maxLag && dp[L4 + 1] < dp[L4]) L4++;
+        T = L4; break;
+      }
     }
-    if (T < 0) { var b = Infinity; for (var L5 = minLag; L5 <= maxLag; L5++) if (dp[L5] < b) { b = dp[L5]; T = L5; } }
+    if (T < 0) {
+      var b = Infinity;
+      for (var L5 = minLag; L5 <= maxLag; L5++) if (dp[L5] < b) { b = dp[L5]; T = L5; }
+    }
     if (T <= minLag) return null;
+    var half = Math.round(T / 2);
+    if (half > minLag && dp[half] < 0.25 && dp[half] <= dp[T] * 1.5) T = half;
+
     var y1 = dp[T - 1], y2 = dp[T], y3 = dp[T + 1];
     var den = y1 + y3 - 2 * y2;
     var shift = den ? (y3 - y1) / (2 * den) : 0;
-    if (shift > 0.5) shift = 0.5; if (shift < -0.5) shift = -0.5;
-    var f = ac.sampleRate / (T - shift);
-    return (f > 70 && f < 1200) ? f : null;
+    if (shift > 0.5) shift = 0.5;
+    if (shift < -0.5) shift = -0.5;
+    var f = sr2 / (T - shift);
+    return (f < fmin || f > fmax) ? null : f;
+  }
+
+  function detectPitch() {                    // 唱的人声范围：70–1600 Hz
+    var f = yinOn(buf, ac.sampleRate, 70, 1600, 2, 0.12);
+    if (!f) return null;
+    if (f >= 400) {                           // 高音区再补一遍：原采样率 + 窄范围（更准）
+      var lo = f * Math.pow(2, -60 / 1200), hi = f * Math.pow(2, 60 / 1200);
+      var g = yinOn(buf, ac.sampleRate, lo, hi, 1, 0.2);
+      if (g && Math.abs(1200 * Math.log2(g / f)) <= 60) f = g;
+    }
+    return f;
   }
 
   function clearTimers() {
@@ -246,18 +300,90 @@
 
   /* ── 开始（跟唱 / 试听） ── */
   function start(sing) {
-    if (!notes.length) { rebuild(); }
+    if (!notes.length) rebuild();
     if (!notes.length) { el('stateTxt').textContent = '这份简谱没解析出音，检查一下写法'; return; }
     stop();
     var Ctx = window.AudioContext || window.webkitAudioContext;
     if (!ac) ac = new Ctx();
+    if (ac.state === 'suspended') ac.resume();
 
+    el('resultPanel').classList.add('hidden');
+    if (!sing) {                                     // 试听：不需要麦克风
+      el('stateTxt').textContent = '试听中…';
+      el('singBtn').disabled = true; el('listenBtn').disabled = true;
+      playMelody();
+      timerIds.push(setTimeout(function () {
+        el('stateTxt').textContent = '试听结束';
+        el('singBtn').disabled = false; el('listenBtn').disabled = false;
+      }, (4 * (60 / bpm) + (endAt - startAt) + 0.4) * 1000));
+      return;
+    }
+
+    // 跟唱：先把麦克风打开、跑起来（以前是先排伴奏再开麦，手机开麦要几百毫秒，伴奏早开始了）
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      el('stateTxt').innerHTML = '<span class="warn">这个浏览器不支持麦克风，或者页面不是 https。</span>';
+      return;
+    }
+    el('stateTxt').textContent = '正在打开麦克风…（第一次会弹权限）';
+    el('singBtn').disabled = true;
+    el('listenBtn').disabled = true;
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(function (s) {
+        micStream = s;
+        var src = ac.createMediaStreamSource(s);
+        analyser = ac.createAnalyser();
+        analyser.fftSize = 16384;                    // 341ms，长窗才稳
+        analyser.smoothingTimeConstant = 0;
+        src.connect(analyser);
+        buf = new Float32Array(analyser.fftSize);
+        samples = [];
+        el('stateTxt').innerHTML = '<span class="ok">麦克风已就绪，跟着唱</span>';
+        startSampling();
+        // 留 500ms 让麦克风真正开始出数据，再排伴奏
+        timerIds.push(setTimeout(function () { playMelody(); }, 500));
+      })
+      .catch(function (err) {
+        var n = err && err.name;
+        el('stateTxt').innerHTML = '<span class="warn">麦克风打不开：' + (n || err) +
+          (n === 'NotAllowedError' ? '（去浏览器设置里允许麦克风）' : '') + '</span>';
+        el('micLevel').textContent = '麦克风：打不开';
+      });
+  }
+
+  // 采样循环：每 70ms 抓一帧波形算音高，每 90ms 刷一次界面
+  function startSampling() {
+    var lastGet = 0, lastUi = 0, lastHeard = performance.now();
+    (function loopFrame() {
+      if (!running && !micStream) return;
+      rafId = requestAnimationFrame(loopFrame);
+      var now = performance.now();
+      var tRel = ac.currentTime - startAt;
+      if (now - lastGet > 70) {
+        lastGet = now;
+        analyser.getFloatTimeDomainData(buf);        // ← 之前漏了这行：buf 一直是全 0，所以永远「没听见声音」
+        var f = detectPitch();
+        if (f) {
+          samples.push({ t: tRel, f: f });
+          lastHeard = now;
+        }
+        var lv = 0;
+        for (var i = 0; i < buf.length; i += 8) lv += buf[i] * buf[i];
+        lv = Math.sqrt(lv / (buf.length / 8));
+        var db = lv > 0 ? Math.round(20 * Math.log10(lv) + 94) : 0;
+        var fresh = now - lastHeard < 700;
+        el('micLevel').textContent = '麦克风 ' + (db > 0 ? db : 0) + ' dB · ' +
+          (fresh && f ? '听到 ' + f.toFixed(1) + ' Hz' : '没听到声音');
+      }
+      if (now - lastUi > 90) { lastUi = now; live(tRel); }
+    })();
+  }
+
+  // 排伴奏（预备拍 + 旋律）并设定起始时间
+  function playMelody() {
     var beat = 60 / bpm;
     var countIn = 4 * beat;
-    startAt = ac.currentTime + countIn + 0.2;
+    startAt = ac.currentTime + countIn + 0.25;
     notes.forEach(function (n) { n.state = null; });
-
-    // 预备拍 + 旋律
     for (var k = 0; k < 4; k++) click(startAt - (4 - k) * beat, k === 0 ? 990 : 700);
     var end = startAt;
     notes.forEach(function (n) {
@@ -272,47 +398,9 @@
     }
     endAt = end;
     running = true;
-    el('resultPanel').classList.add('hidden');
-    el('singBtn').disabled = sing;
-    el('listenBtn').disabled = !sing;
-
-    if (!sing) {
-      el('stateTxt').textContent = '试听中…';
-      timerIds.push(setTimeout(function () {
-        el('stateTxt').textContent = '试听结束';
-        el('listenBtn').disabled = false; el('singBtn').disabled = false;
-      }, (countIn + (endAt - startAt) + 0.4) * 1000));
-      return;
-    }
-
-    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
-      .then(function (s) {
-        micStream = s;
-        var src = ac.createMediaStreamSource(s);
-        analyser = ac.createAnalyser();
-        analyser.fftSize = 4096;
-        src.connect(analyser);
-        buf = new Float32Array(analyser.fftSize);
-        samples = [];
-        el('stateTxt').innerHTML = '<span class="ok">录音中…跟着唱</span>';
-        var lastGet = 0, lastUi = 0;
-        (function loopFrame() {
-          rafId = requestAnimationFrame(loopFrame);
-          var now = performance.now();
-          var tRel = ac.currentTime - startAt;
-          if (now - lastGet > 70) {                       // 检测限速，手机省电
-            lastGet = now;
-            var f = detectPitch();
-            if (f) samples.push({ t: tRel, f: f });
-          }
-          if (now - lastUi > 90) { lastUi = now; live(tRel); }
-        })();
-        timerIds.push(setTimeout(finish, (countIn + (endAt - startAt) + 0.5) * 1000));
-      })
-      .catch(function (err) {
-        running = false;
-        el('stateTxt').innerHTML = '<span class="warn">麦克风打不开：' + (err && err.name || err) + '</span>';
-      });
+    el('singBtn').disabled = micStream ? true : false;
+    el('listenBtn').disabled = true;
+    if (micStream) timerIds.push(setTimeout(finish, (countIn + (endAt - startAt) + 0.5) * 1000));
   }
 
   function click(t, freq, gain) {
@@ -426,6 +514,7 @@
     clearTimers();
     if (micStream) { micStream.getTracks().forEach(function (t) { t.stop(); }); micStream = null; }
     el('singBtn').disabled = false; el('listenBtn').disabled = false;
+    el('micLevel').textContent = '麦克风：未开启';
   }
 
   /* ── 交互 ── */

@@ -162,8 +162,9 @@
   .hero { padding: 20px 22px; margin-bottom: 26px; }
   .hero h1 { font-size: 26px; font-weight: 700; letter-spacing: .5px; }
   .hero .sub { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
-  /* 头部：左标题 / 右实时时钟（仿 dwkc.cn） */
+  /* 头部右侧：时钟 + 设置按钮（都在流里，不会压到标题） */
   .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .hero-right { display: flex; align-items: center; gap: 10px; }
   .hero-time {
     text-align: right; padding: 7px 15px; border-radius: 24px;
     background: rgba(255,255,255,.62);
@@ -208,8 +209,8 @@
     color: inherit;
   }
   #settingBtn {
-    position: fixed; top: 16px; right: 16px; width: 44px; height: 44px;
-    border-radius: 50%; font-size: 19px; cursor: pointer; z-index: 30;
+    width: 40px; height: 40px; flex: none;
+    border-radius: 50%; font-size: 18px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
   }
   #settingBtn:active { transform: scale(.94); }
@@ -244,55 +245,56 @@
   .hint { font-size: 11px; color: var(--ink-soft); opacity: .8; margin-top: 10px; line-height: 1.5; }
   #fpsText { font-size: 11px; color: var(--ink-soft); opacity: .7; margin-top: 16px; text-align: center; }
   /* ── 音乐播放器 ── */
-  /* 宽度缩 30%（窄屏保底 320px 不至于挤坏），同时高度方向压掉约 30% */
-  .player { margin: 20px auto 0; width: 70%; min-width: 320px; max-width: 100%; padding: 14px; border-radius: 24px; }
-  .player .title { font-size: 14px; font-weight: 600; margin-bottom: 9px; }
+  /* 高度继续压缩，宽度保持 70%（窄屏保底 320px） */
+  .player { margin: 16px auto 0; width: 70%; min-width: 320px; max-width: 100%; padding: 11px; border-radius: 22px; }
+  .player .title { font-size: 13px; font-weight: 600; margin-bottom: 7px; }
   .m-search { display: flex; gap: 6px; }
   .m-search input {
-    flex: 1; min-width: 0; padding: 8px 12px; border-radius: 14px; font-size: 13px;
+    flex: 1; min-width: 0; padding: 7px 11px; border-radius: 13px; font-size: 13px;
     color: var(--ink); font-family: inherit; outline: none;
     border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.28);
     backdrop-filter: blur(8px);
   }
   .m-search input::placeholder { color: var(--ink-soft); }
   .m-search button, .m-btn {
-    padding: 8px 12px; border-radius: 14px; font-size: 13px; cursor: pointer;
+    padding: 7px 11px; border-radius: 13px; font-size: 13px; cursor: pointer;
     color: var(--ink); font-family: inherit; white-space: nowrap;
     border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.28); transition: all .16s;
   }
   .m-search button:hover, .m-btn:hover { background: rgba(255,255,255,.45); }
   .m-btn:disabled { opacity: .4; cursor: default; }
-  .m-hint { margin-top: 7px; font-size: 11px; color: var(--ink-soft); opacity: .85; line-height: 1.45; }
-  .m-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; max-height: 230px; overflow: auto; }
+  .m-hint { margin-top: 6px; font-size: 10.5px; color: var(--ink-soft); opacity: .85; line-height: 1.35; }
+  .m-list { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; max-height: 168px; overflow: auto; }
   .m-item {
     display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; color: inherit;
-    padding: 6px 9px; border-radius: 13px; cursor: pointer;
+    padding: 5px 8px; border-radius: 12px; cursor: pointer;
     border: 1px solid transparent; background: rgba(255,255,255,.22); transition: background .16s;
   }
   .m-item:hover { background: rgba(255,255,255,.45); }
   .m-item.playing { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .m-item img { width: 36px; height: 36px; border-radius: 9px; flex: none; object-fit: cover; background: rgba(0,0,0,.12); }
+  .m-item img { width: 30px; height: 30px; border-radius: 8px; flex: none; object-fit: cover; background: rgba(0,0,0,.12); }
   .m-item .m-txt { min-width: 0; }
-  .m-name { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-sub { font-size: 11px; opacity: .75; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-now { margin-top: 10px; padding: 9px; border-radius: 16px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.24); }
-  .m-now-top { display: flex; align-items: center; gap: 9px; }
-  .m-now-top img { width: 38px; height: 38px; border-radius: 10px; flex: none; object-fit: cover; }
+  .m-name { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-sub { font-size: 10.5px; opacity: .75; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-now { margin-top: 7px; padding: 7px; border-radius: 15px; border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.24); }
+  .m-now-top { display: flex; align-items: center; gap: 8px; }
+  .m-now-top img { width: 32px; height: 32px; border-radius: 9px; flex: none; object-fit: cover; }
   .m-now-info { min-width: 0; }
-  .m-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-artist { font-size: 11px; color: var(--ink-soft); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .m-bar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-  .m-time { font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums; flex: none; }
+  .m-title { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-artist { font-size: 10.5px; color: var(--ink-soft); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-bar { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .m-time { font-size: 10.5px; color: var(--ink-soft); font-variant-numeric: tabular-nums; flex: none; }
   .m-seek { flex: 1; min-width: 0; }
   input[type=range] { accent-color: var(--accent); }
-  .m-ctrl { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .m-ctrl { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .m-ctrl .m-btn { padding: 7px 10px; min-width: 40px; text-align: center; }
   .m-play {
-    width: 44px; height: 44px; border-radius: 50%; font-size: 16px; cursor: pointer;
+    width: 38px; height: 38px; border-radius: 50%; font-size: 15px; cursor: pointer;
     border: 1px solid var(--accent); background: var(--accent); color: #fff;
     box-shadow: 0 6px 16px rgba(59,124,255,.35);
   }
   .m-ctrl .m-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .m-vol { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 11px; color: var(--ink-soft); }
+  .m-vol { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 10.5px; color: var(--ink-soft); }
   .m-vol input { flex: 1; min-width: 0; }
   #mAudio { display: none; }
 
@@ -354,8 +356,6 @@
 </div>
 <div id="floatLayer"></div>
 
-<button id="settingBtn" class="glass-btn">⚙️</button>
-
 <div id="settingPanel" class="glass">
   <button id="closeSetting">✕</button>
   <h2>设置</h2>
@@ -406,9 +406,12 @@
       <div>
         <h1>大大小小</h1>
       </div>
-      <div class="hero-time">
-        <div class="live-time" id="liveTime">00:00:00</div>
-        <div class="live-date" id="liveDate">2026.01.01</div>
+      <div class="hero-right">
+        <div class="hero-time">
+          <div class="live-time" id="liveTime">00:00:00</div>
+          <div class="live-date" id="liveDate">2026.01.01</div>
+        </div>
+        <button id="settingBtn" class="glass-btn" title="设置">⚙️</button>
       </div>
     </div>
   </header>
@@ -473,7 +476,7 @@
       <input id="mQuery" type="search" placeholder="搜歌名或歌手，例如：周杰伦 晴天" autocomplete="off" enterkeyhint="search">
       <button type="submit" id="mSearchBtn">搜索</button>
     </form>
-    <div class="m-hint" id="mHint">曲库来自 iTunes Store，放的是 30 秒试听片段。也可以点 📁 选本机音频文件来播。</div>
+    <div class="m-hint" id="mHint">曲库 iTunes · 放 30 秒试听 · 📁 可播本机文件</div>
 
     <div class="m-list" id="mList"></div>
 
@@ -496,8 +499,8 @@
         <button class="m-btn" id="mPrev" type="button" title="上一首">⏮</button>
         <button class="m-play" id="mPlay" type="button" title="播放 / 暂停">▶</button>
         <button class="m-btn" id="mNext" type="button" title="下一首">⏭</button>
-        <button class="m-btn" id="mLoop" type="button" title="循环模式">🔁 列表</button>
-        <button class="m-btn" id="mFileBtn" type="button" title="播放本机音频文件">📁 本机</button>
+        <button class="m-btn" id="mLoop" type="button" title="循环模式：列表 / 单曲 / 随机">🔁</button>
+        <button class="m-btn" id="mFileBtn" type="button" title="播放本机音频文件">📁</button>
       </div>
 
       <div class="m-vol">🔊 <input id="mVol" type="range" min="0" max="100" value="100" aria-label="音量"></div>
@@ -746,7 +749,8 @@
   var mIndex = -1;
   var mLoopMode = 0;                       /* 0 列表循环 1 单曲循环 2 随机 */
   var mSeeking = false;
-  var M_LOOP_TXT = ['🔁 列表', '🔁 单曲', '🔀 随机'];
+  var M_LOOP_TXT = ['🔁', '🔂', '🔀'];          /* 只留图标：列表 / 单曲 / 随机 */
+  var M_LOOP_TIP = ['列表循环', '单曲循环', '随机播放'];
 
   function mFmt(t) {
     if (!isFinite(t) || t < 0) return '0:00';
@@ -855,6 +859,7 @@
   mLoop.onclick = function () {
     mLoopMode = (mLoopMode + 1) % 3;
     mLoop.textContent = M_LOOP_TXT[mLoopMode];
+    mLoop.title = '循环模式：' + M_LOOP_TIP[mLoopMode];
     mLoop.classList.toggle('on', mLoopMode !== 0);
   };
   mFileBtn.onclick = function () { mFile.click(); };

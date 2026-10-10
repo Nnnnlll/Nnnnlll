@@ -16,11 +16,13 @@
 </style>
 </head>
 <body>
+<script src="theme.js"></script>
 <div class="blob b1"></div><div class="blob b2"></div>
 
 <div class="wrap">
   <div class="top">
     <a class="back" href="../index.html">← 返回</a>
+    <button id="themeBtn" class="back ghost" title="切换深浅色">🌙</button>
     <div><h1>文字转语音</h1><div class="sub">打什么念什么，用手机自带语音引擎</div></div>
   </div>
 
@@ -46,8 +48,25 @@
       <button class="btn primary" id="playBtn">▶ 朗读</button>
       <button class="btn" id="pauseBtn">⏸ 暂停</button>
       <button class="btn" id="stopBtn">⏹ 停止</button>
+      <button class="btn" id="recBtn">🎙 念并录下来</button>
+    </div>
+    <div class="dim" id="recState" style="font-size:12px;margin-top:8px">念完可以存成音频文件（WAV），点上面那个按钮开始。</div>
+    <div id="recBox" class="hidden" style="margin-top:10px">
+      <audio id="recAudio" controls style="width:100%"></audio>
+      <div class="row" style="margin-top:8px">
+        <a class="btn" id="recDown" download="tts.wav">⬇ 下载 WAV</a>
+        <span class="dim" id="recInfo" style="font-size:12px"></span>
+      </div>
     </div>
     <div class="note" id="note">音色来自你手机系统的 TTS 引擎，不联网也能用。如果下拉框是空的，去「系统设置 → 语音合成」装一个中文语音包。</div>
+    <details style="margin-top:10px">
+      <summary class="dim" style="font-size:12px;cursor:pointer">「念并录下来」怎么用 / 为什么有点麻烦</summary>
+      <div class="note" style="margin-top:8px">
+        浏览器的安全限制：系统 TTS 的声音是直接送到扬声器的，网页拿不到那段内部音频，所以这里只能**用麦克风把外放的声音录回来**。<br>
+        想录得干净：找个安静房间、音量开到 80% 左右（太大反而会破音）、手机离自己远一点、别说话，念完会自动停。<br>
+        录完能直接试听，点「下载 WAV」就存到手机的「下载」目录里。想要更干净的音质，还是得用带导出功能的桌面 TTS 软件。
+      </div>
+    </details>
   </div>
 </div>
 
@@ -142,7 +161,9 @@
     el('playBtn').classList.remove('speaking');
     el('playBtn').textContent = '▶ 朗读';
     el('pauseBtn').textContent = '⏸ 暂停';
+    if (recording) timerIds.push(setTimeout(stopRec, 900));   // 等尾音录完再停
   }
+  var timerIds = [];
 
   el('playBtn').addEventListener('click', function () {
     if (speaking && paused) { synth.resume(); paused = false; el('pauseBtn').textContent = '⏸ 暂停'; this.textContent = '▶ 朗读'; return; }
@@ -185,6 +206,105 @@
     if (speaking) { synth.cancel(); speaking = false; done(); }
   });
   el('voice').addEventListener('change', function () { saveLast(this.value); });
+
+  /* ── 念并录下来：网页拿不到系统 TTS 的内部音频，只能用麦克风把外放声音录回来
+        这里直接抓 PCM 存成 WAV（16bit），比 MediaRecorder 的 webm 更通用 ── */
+  var recording = false, recChunks = [], recStream = null, recAc = null, recProc = null, recMute = null, recRate = 44100;
+  var recT0 = 0, recTick = null;
+
+  function encodeWav(chunks, sr) {
+    var len = 0, i;
+    for (i = 0; i < chunks.length; i++) len += chunks[i].length;
+    var ab = new ArrayBuffer(44 + len * 2), v = new DataView(ab);
+    function ws(off, s) { for (var k = 0; k < s.length; k++) v.setUint8(off + k, s.charCodeAt(k)); }
+    ws(0, 'RIFF'); v.setUint32(4, 36 + len * 2, true); ws(8, 'WAVE');
+    ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    ws(36, 'data'); v.setUint32(40, len * 2, true);
+    var o = 44;
+    for (i = 0; i < chunks.length; i++) {
+      var c = chunks[i];
+      for (var j = 0; j < c.length; j++) {
+        var s = Math.max(-1, Math.min(1, c[j]));
+        v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        o += 2;
+      }
+    }
+    return new Blob([v], { type: 'audio/wav' });
+  }
+
+  function stopRec() {
+    if (!recording) return;
+    recording = false;
+    try { if (recProc) recProc.disconnect(); if (recMute) recMute.disconnect(); } catch (e) {}
+    if (recAc) { try { recAc.close(); } catch (e) {} }
+    recAc = null; recProc = null;
+    if (recStream) { recStream.getTracks().forEach(function (t) { t.stop(); }); recStream = null; }
+    el('recBtn').textContent = '🎙 念并录下来';
+    if (recTick) { clearInterval(recTick); recTick = null; }
+    if (!recChunks.length) { el('recState').innerHTML = '<span class="warn">没录到东西，检查麦克风权限。</span>'; return; }
+    var blob = encodeWav(recChunks, recRate);
+    var url = URL.createObjectURL(blob);
+    var d = new Date();
+    function p2(n) { return (n < 10 ? '0' : '') + n; }
+    var name = 'tts-' + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + '-' + p2(d.getHours()) + p2(d.getMinutes()) + p2(d.getSeconds()) + '.wav';
+    el('recAudio').src = url;
+    el('recDown').href = url;
+    el('recDown').setAttribute('download', name);
+    el('recBox').classList.remove('hidden');
+    var secs = (Date.now() - recT0) / 1000;
+    el('recInfo').textContent = name + ' · ' + Math.round(blob.size / 1024) + ' KB · 约 ' + secs.toFixed(1) + ' 秒';
+    el('recState').innerHTML = '<span class="ok">录好了，下面可以试听 / 下载（存到手机的「下载」目录）。</span>';
+    recChunks = [];
+  }
+
+  el('recBtn').addEventListener('click', function () {
+    if (recording) { stopRec(); return; }
+    var text = el('text').value.trim();
+    if (!text) { el('text').focus(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      el('recState').innerHTML = '<span class="warn">这个浏览器不支持录音（或页面不是 https）。</span>';
+      return;
+    }
+    el('recState').textContent = '正在打开麦克风…';
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+      .then(function (s) {
+        recStream = s;
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        recAc = new Ctx();
+        var src = recAc.createMediaStreamSource(s);
+        recProc = recAc.createScriptProcessor(4096, 1, 1);
+        recMute = recAc.createGain();
+        recMute.gain.value = 0;                       // 别把自己录的声音再放出来
+        recChunks = [];
+        recProc.onaudioprocess = function (e) {
+          if (!recording) return;
+          recChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+        };
+        src.connect(recProc);
+        recProc.connect(recMute);
+        recMute.connect(recAc.destination);
+        recording = true;
+        recRate = recAc.sampleRate || 44100;          // 按真实采样率写 WAV 头，不然速度会不对
+        recT0 = Date.now();
+        el('recBtn').textContent = '⏹ 停止录音';
+        el('recBox').classList.add('hidden');
+        el('recState').textContent = '1 秒后开始念，录的是手机外放的声音…';
+        if (recTick) clearInterval(recTick);
+        recTick = setInterval(function () {
+          if (!recording) { clearInterval(recTick); recTick = null; return; }
+          el('recState').textContent = '录音中 ' + ((Date.now() - recT0) / 1000).toFixed(1) + ' 秒 · 正在念（别出声，安静环境效果最好）';
+        }, 200);
+        setTimeout(function () {
+          if (!recording) return;
+          el('playBtn').textContent = '🔊 重念';
+          speak();
+        }, 1000);
+      })
+      .catch(function (err) {
+        el('recState').innerHTML = '<span class="warn">麦克风打不开：' + ((err && err.name) || err) + '</span>';
+      });
+  });
 })();
 </script>
 </body>
