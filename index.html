@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#dfe7f8">
+<meta name="theme-color" content="#f8fafd">
 <title>大大小小</title>
 <script>
 /* 首屏前就定档：手机默认关折射（否则会先卡几秒） */
@@ -19,19 +19,19 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   :root {
-    --glass-bg: rgba(255,255,255,.16);
-    --glass-bg-strong: rgba(255,255,255,.26);
-    --glass-line: rgba(255,255,255,.55);
-    --ink: #1d2433;
-    --ink-soft: #6b7688;
-    --shadow: 0 10px 30px rgba(31,50,90,.16);
-    --accent: #4a90e2;
+    --glass-bg: rgba(255,255,255,.82);
+    --glass-bg-strong: rgba(255,255,255,.95);
+    --glass-line: rgba(255,255,255,.9);
+    --ink: #1b2a3f;
+    --ink-soft: #5f6f8a;
+    --shadow: 0 8px 20px rgba(20,40,90,.05), 0 2px 4px rgba(0,0,0,.02);
+    --accent: #3b7cff;
   }
   html, body { min-height: 100%; }
   body {
     font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     color: var(--ink);
-    background: #e8eef9;
+    background: linear-gradient(145deg, #f8fafd 0%, #edf2f9 100%);
     padding: 22px 18px 40px;
     overflow-x: hidden;
     position: relative;
@@ -39,17 +39,17 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── 背景：流动色斑（折射需要底下有东西） ── */
+  /* ── 背景：柔光色斑（蓝 / 紫 / 青，径向渐隐，固定不动） ── */
   .bg { position: fixed; inset: -20%; z-index: 0; pointer-events: none; }
   .blob {
-    position: absolute; width: 58vw; height: 58vw; max-width: 460px; max-height: 460px;
-    border-radius: 50%; filter: blur(44px); opacity: .78;
+    position: absolute; width: 46vw; height: 46vw; max-width: 420px; max-height: 420px;
+    border-radius: 50%; filter: blur(72px); opacity: .6;
     will-change: transform;
   }
-  .b1 { background: #7fb6ff; top: -6%;  left: -12%; animation: drift1 34s ease-in-out infinite alternate; }
-  .b2 { background: #ff9ec4; top: 26%;  right: -18%; animation: drift2 40s ease-in-out infinite alternate; }
-  .b3 { background: #a6f0d8; bottom: -12%; left: 4%; animation: drift3 38s ease-in-out infinite alternate; }
-  .b4 { background: #ffd98a; bottom: 22%; right: 6%; animation: drift4 44s ease-in-out infinite alternate; }
+  .b1 { background: radial-gradient(circle, rgba(90,150,255,.85), rgba(255,210,120,.25)); top: -8%;  left: -14%; animation: drift1 34s ease-in-out infinite alternate; }
+  .b2 { background: radial-gradient(circle, rgba(140,100,220,.8), rgba(20,160,210,.25)); top: 22%;  right: -16%; animation: drift2 40s ease-in-out infinite alternate; }
+  .b3 { background: radial-gradient(circle, rgba(20,160,210,.6), rgba(255,255,255,0)); bottom: -14%; left: 0%; animation: drift3 38s ease-in-out infinite alternate; }
+  .b4 { background: radial-gradient(circle, rgba(255,210,120,.6), rgba(255,255,255,0)); bottom: 16%; right: 2%; animation: drift4 44s ease-in-out infinite alternate; }
   @keyframes drift1 { to { transform: translate3d(14vw, 10vh, 0) scale(1.15); } }
   @keyframes drift2 { to { transform: translate3d(-16vw, 12vh, 0) scale(1.1); } }
   @keyframes drift3 { to { transform: translate3d(12vw, -14vh, 0) scale(1.2); } }
@@ -100,9 +100,9 @@
   /* ── 液态玻璃基类（hyalite 注入真实折射） ── */
   .glass {
     position: relative;
-    border-radius: 26px;
+    border-radius: 28px;
     background: var(--glass-bg);
-    border: 1px solid var(--glass-line);
+    border: .8px solid var(--glass-line);
     backdrop-filter: var(--hyalite, blur(14px) saturate(180%));
     -webkit-backdrop-filter: var(--hyalite, blur(14px) saturate(180%));
     box-shadow: var(--hyalite-edge, none), var(--shadow);
@@ -112,7 +112,7 @@
   .glass::after {
     content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
     background: linear-gradient(160deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 26%, rgba(255,255,255,0) 52%);
-    mix-blend-mode: screen; opacity: .7;
+    mix-blend-mode: screen; opacity: .4;
   }
 
   /* ── 卡片：永远用普通模糊，不做折射（6 个变 2 个，这是最大的一刀） ── */
@@ -140,6 +140,18 @@
   .hero { padding: 20px 22px; margin-bottom: 26px; }
   .hero h1 { font-size: 26px; font-weight: 700; letter-spacing: .5px; }
   .hero .sub { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+  /* 头部：左标题 / 右实时时钟（仿 dwkc.cn） */
+  .hero-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .hero-time {
+    text-align: right; padding: 7px 15px; border-radius: 24px;
+    background: rgba(255,255,255,.62);
+    border: .5px solid rgba(0,0,0,.04);
+    box-shadow: 0 4px 12px rgba(0,0,0,.02);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .live-time { font-size: 20px; font-weight: 600; letter-spacing: -.4px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .live-date { font-size: 11px; color: var(--ink-soft); margin-top: 3px; letter-spacing: .4px; font-variant-numeric: tabular-nums; }
+  body.dark .hero-time { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.14); }
 
   .section-title { font-size: 14px; font-weight: 600; color: var(--ink-soft); margin: 0 0 12px 6px; letter-spacing: 1px; }
 
@@ -147,10 +159,19 @@
 
   .card {
     display: block; text-decoration: none; color: inherit;
-    padding: 18px 16px; cursor: pointer; border-radius: 24px;
+    padding: 18px 16px; cursor: pointer; border-radius: 28px;
   }
-  .card:hover { transform: translateY(-3px); }
+  .card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(59,124,255,.25);
+    background: var(--glass-bg-strong);
+    animation: softGlow .6s ease forwards;
+  }
   .card:active { transform: translateY(1px) scale(.985); }
+  @keyframes softGlow {
+    0% { box-shadow: 0 8px 20px rgba(59,124,255,.05); }
+    100% { box-shadow: 0 12px 24px rgba(59,124,255,.12); }
+  }
   .card .icon { font-size: 28px; margin-bottom: 10px; }
   .card .name { font-size: 15px; font-weight: 600; }
   .card .desc { font-size: 12px; color: var(--ink-soft); line-height: 1.45; margin-top: 3px; }
@@ -192,7 +213,7 @@
     background: rgba(255,255,255,.3); backdrop-filter: blur(8px);
     transition: all .16s;
   }
-  .opt.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(74,144,226,.4); }
+  .opt.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(59,124,255,.4); }
   .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 4px; font-size: 14px; }
   .switch { position: relative; width: 46px; height: 26px; background: rgba(120,130,150,.4); border-radius: 13px; cursor: pointer; transition: background .25s; }
   .switch.on { background: var(--accent); }
@@ -245,7 +266,7 @@
   .m-play {
     width: 52px; height: 52px; border-radius: 50%; font-size: 17px; cursor: pointer;
     border: 1px solid var(--accent); background: var(--accent); color: #fff;
-    box-shadow: 0 6px 16px rgba(74,144,226,.35);
+    box-shadow: 0 6px 16px rgba(59,124,255,.35);
   }
   .m-ctrl .m-btn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
   .m-vol { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 11px; color: var(--ink-soft); }
@@ -253,7 +274,14 @@
   #mAudio { display: none; }
 
 
-  footer { margin-top: 34px; text-align: center; font-size: 12px; color: var(--ink-soft); opacity: .8; }
+  footer {
+    margin: 44px auto 0; width: fit-content; text-align: center;
+    font-size: 12px; color: var(--ink-soft); letter-spacing: .2px;
+    padding: 12px 18px; border-radius: 40px;
+    background: rgba(248,250,255,.7); border: .5px solid rgba(255,255,255,.7);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  }
+  body.dark footer { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
 
   /* ── 暗色 ── */
   body.dark {
@@ -356,8 +384,16 @@
 <div class="wrap" id="app">
 
   <header class="hero glass">
-    <h1>大大小小</h1>
-    <div class="sub">收录好用的小工具</div>
+    <div class="hero-row">
+      <div>
+        <h1>大大小小</h1>
+        <div class="sub">收录好用的小工具</div>
+      </div>
+      <div class="hero-time">
+        <div class="live-time" id="liveTime">00:00:00</div>
+        <div class="live-date" id="liveDate">2026.01.01</div>
+      </div>
+    </div>
   </header>
 
   <div class="section-title">滴滴滴</div>
@@ -837,5 +873,20 @@ document.addEventListener('keydown', function (e) {
 });
 </script>
 
+<script>
+/* 实时时钟（仿 dwkc.cn：时:分:秒 大字 + 年.月.日 小字） */
+(function () {
+  var tEl = document.getElementById('liveTime');
+  var dEl = document.getElementById('liveDate');
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function tick() {
+    var n = new Date();
+    tEl.textContent = pad(n.getHours()) + ':' + pad(n.getMinutes()) + ':' + pad(n.getSeconds());
+    dEl.textContent = n.getFullYear() + '.' + pad(n.getMonth() + 1) + '.' + pad(n.getDate());
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
 </body>
 </html>
