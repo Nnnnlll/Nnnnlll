@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的导航站</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f6f8;
+    color: #222;
+    padding: 20px;
+  }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
+  .section-title {
+    font-size: 15px; font-weight: 600;
+    margin: 22px 0 12px; color: #444;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    transition: transform .15s, box-shadow .15s;
+    display: block;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .card .icon { font-size: 24px; margin-bottom: 8px; }
+  .card .name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .card .desc { font-size: 12px; color: #999; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+  <h1>我的导航站</h1>
+  <div class="sub">收录好用的小工具</div>
+
+  <div class="section-title">免费工具</div>
+  <div class="grid">
+
+    <a class="card" href="https://example.com" target="_blank">
+      <div class="icon">🔧</div>
+      <div class="name">工具名称一</div>
+      <div class="desc">一句话描述这个工具</div>
+    </a>
+
+    <a class="card" href="https://example.com" target="_blank">
+      <div class="icon">🎵</div>
+      <div class="name">工具名称二</div>
+      <div class="desc">一句话描述这个工具</div>
+    </a>
+
+    <a class="card" href="https://example.com" target="_blank">
+      <div class="icon">📱</div>
+      <div class="name">工具名称三</div>
+      <div class="desc">一句话描述这个工具</div>
+    </a>
+
+    <a class="card" href="https://example.com" target="_blank">
+      <div class="icon">🌐</div>
+      <div class="name">工具名称四</div>
+      <div class="desc">一句话描述这个工具</div>
+    </a>
+
+  </div>
+
+</body>
+</html>
