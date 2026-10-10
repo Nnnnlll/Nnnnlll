@@ -245,6 +245,19 @@
 .gamemodal-acts button{border:0;background:transparent;font-size:17px;line-height:1;color:inherit;cursor:pointer;padding:2px 4px}
 #gameFrame{flex:1;width:100%;border:0;background:#0d1220}
 .gamemodal-box::after{content:none}
+.gamemodal-acts button#gameBack{font-size:12px;padding:3px 8px;border-radius:8px;background:rgba(255,255,255,.18)}
+.gamepicker{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:2px 12px 14px}
+.pick{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:inherit;font:inherit;cursor:pointer;
+  transition:background .2s, transform .15s}
+.pick:hover{background:rgba(255,255,255,.24)}
+.pick:active{transform:scale(.985)}
+.pick-ico{font-size:30px;line-height:1;flex:none}
+.pick-txt{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pick-txt b{font-size:15px}
+.pick-txt i{font-size:12px;opacity:.75;font-style:normal;line-height:1.35}
+.gamemodal-box #gamePicker[hidden],.gamemodal-box #gameFrame[hidden],
+.gamemodal-acts #gameBack[hidden],.gamemodal-acts #gameOpen[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -343,18 +356,31 @@
   <footer>作者：林紫涵，+10086</footer>
 </div>
 
-<!-- 游戏弹窗 -->
+<!-- 游戏弹窗：先选游戏，再加载 -->
 <div class="gamemodal" id="gameModal" aria-hidden="true">
   <div class="gamemodal-mask" onclick="closeGame()"></div>
   <div class="gamemodal-box glass">
     <div class="gamemodal-bar">
-      <span>🐸 奶蛙 2048</span>
+      <span id="gameTitle">🎮 选个小游戏</span>
       <div class="gamemodal-acts">
-        <a href="./game/" target="_blank" rel="noopener">新窗口打开</a>
+        <button type="button" id="gameBack" onclick="showPicker()" hidden>返回</button>
+        <a id="gameOpen" href="#" target="_blank" rel="noopener" hidden>新窗口打开</a>
         <button type="button" onclick="closeGame()" aria-label="关闭">✕</button>
       </div>
     </div>
-    <iframe id="gameFrame" title="奶蛙 2048" data-src="./game/" allowfullscreen></iframe>
+    <div class="gamepicker" id="gamePicker">
+      <button class="pick" type="button" onclick="playGame(this)"
+              data-src="./game/naiwa/" data-name="🐸 奶蛙2048">
+        <span class="pick-ico">🐸</span>
+        <span class="pick-txt"><b>奶蛙2048</b><i>滑动改变重力方向，同款奶蛙撞到一起就合成 2→4→…→2048</i></span>
+      </button>
+      <button class="pick" type="button" onclick="playGame(this)"
+              data-src="./game/danaiwa/" data-name="🍉 合成大奶娃">
+        <span class="pick-ico">🍉</span>
+        <span class="pick-txt"><b>合成大奶娃</b><i>拖动瞄准、松手投放，相同的水果撞一起合体长大</i></span>
+      </button>
+    </div>
+    <iframe id="gameFrame" title="小游戏" hidden allowfullscreen></iframe>
   </div>
 </div>
 
@@ -551,19 +577,43 @@
 
 <script>
 function openGame() {
+  showPicker();
   var m = document.getElementById('gameModal');
-  var f = document.getElementById('gameFrame');
-  if (f && !f.getAttribute('src')) f.setAttribute('src', f.getAttribute('data-src'));
   m.classList.add('on');
   m.setAttribute('aria-hidden', 'false');
   document.documentElement.style.overflow = 'hidden';
   return false;
+}
+// 回到游戏选择界面
+function showPicker() {
+  var f = document.getElementById('gameFrame');
+  f.removeAttribute('src');
+  f.hidden = true;
+  document.getElementById('gamePicker').hidden = false;
+  document.getElementById('gameTitle').textContent = '🎮 选个小游戏';
+  document.getElementById('gameBack').hidden = true;
+  document.getElementById('gameOpen').hidden = true;
+}
+// 选中某个游戏后再加载它的页面
+function playGame(btn) {
+  var url = btn.getAttribute('data-src');
+  var f = document.getElementById('gameFrame');
+  f.setAttribute('src', url);
+  f.hidden = false;
+  document.getElementById('gamePicker').hidden = true;
+  document.getElementById('gameTitle').textContent = btn.getAttribute('data-name');
+  var back = document.getElementById('gameBack');
+  back.hidden = false;
+  var open = document.getElementById('gameOpen');
+  open.setAttribute('href', url);
+  open.hidden = false;
 }
 function closeGame() {
   var m = document.getElementById('gameModal');
   m.classList.remove('on');
   m.setAttribute('aria-hidden', 'true');
   document.documentElement.style.overflow = '';
+  showPicker();
 }
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') closeGame();

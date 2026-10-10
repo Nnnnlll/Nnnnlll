@@ -88,9 +88,6 @@
     <div class="medal" id="medal" hidden>🏅 已合成 2048</div>
 
     <div class="actions">
-      <button class="btn btn-wide" id="boardBtn" type="button">
-        <span class="ico">🏆</span><span class="lbl">排行榜</span>
-      </button>
       <button class="btn" id="soundBtn" type="button" aria-pressed="true">
         <span class="ico">🔊</span><span class="lbl">音效开</span>
       </button>
@@ -111,47 +108,15 @@
     <p class="dialog-score">本局得分 <strong id="finalScore">0</strong></p>
     <p class="dialog-best">最高分 <span id="finalBest">0</span></p>
 
-    <div class="submit-box" id="submitBox">
-      <p class="submit-msg" id="submitMsg">正在结算…</p>
-      <p class="my-name">昵称：<strong id="myNameLabel">默认用户</strong>
-        <button class="link-btn" id="editNameBtn" type="button">改昵称</button>
-      </p>
-      <button class="btn" id="submitBtn" type="button" hidden>重试提交</button>
-    </div>
-
-    <div class="dialog-actions">
-      <button class="btn" id="boardBtn2" type="button">🏆 排行榜</button>
-      <button class="btn btn-primary" id="restartBtn" type="button">再来一局</button>
-    </div>
-    <p class="dialog-hint">按 R 键也可重新开始</p>
+    <div class="dialog-actions">      <button class="btn btn-primary" id="restartBtn" type="button">再来一局</button>
+    </div>    <p class="dialog-hint">按 R 键也可重新开始</p>
   </div>
 </div>
 
-<!-- ===== 排行榜弹窗 ===== -->
-<div class="modal" id="boardModal" aria-hidden="true" role="dialog" aria-label="排行榜">
-  <div class="modal-card">
-    <header class="modal-head">
-      <h2>🏆 最近 30 名</h2>
-      <button class="icon-btn" id="boardClose" type="button" aria-label="关闭">✕</button>
-    </header>
-    <div class="nick-row">
-      <label class="nick-label" for="nickInput">我的昵称</label>
-      <input class="nick-input" id="nickInput" type="text" maxlength="12"
-             placeholder="默认用户" autocomplete="nickname" enterkeyhint="done">
-    </div>
-    <div class="board-list" id="boardList"></div>
-    <footer class="modal-foot">
-      <span class="board-note">只取最近 30 次提交，成绩会被后来的人挤下去</span>
-      <button class="btn" id="boardRefresh" type="button">刷新</button>
-    </footer>
-  </div>
-</div>
 
 
 <!-- 碰撞形状数据（按贴图轮廓自动生成，沿用 BigNaiWa 样例的 parts.js） -->
 <script src="assets/frogs/parts.js"></script>
 <script src="game.js"></script>
-<!-- 排行榜（TinyWebDB 接口 + 弹窗渲染；网络不通也不影响玩） -->
-<script src="leaderboard.js"></script>
 </body>
 </html>
