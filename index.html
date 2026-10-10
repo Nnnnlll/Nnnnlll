@@ -1,39 +1,39 @@
-<!DOCTYPE html
-<HTML lang=zh-CN>
-<头>
-<元 charset=八强>
-<元 名称=视港 内容=width=device-width,初始-scale=1.0,视口拟合=覆盖>
-<元 名称=主题颜色 内容=#dfe7f8>
-<标题>大大年子</标题>
-<脚本>
-/* 首协内 首协内云认共折罗 :
-(函数 () {
-  瓦尔 ua = 导航器.用户代理;
-  瓦尔 暴民 = /Android|iPhone|iPad|iPad|Mobile|HarmonyOS/i.测试(ua)
-         || (导航器.maxTouchPoints > 1 && 数学.最小(屏幕.宽度, 屏幕.高度) < 820);
-  瓦尔 d = 文件.文件元素;
-  d.setAttribute(数据暴民, 暴民 ? '1' : '0');
-  如果 (暴民) d.班级清单.添加(无折射);
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#dfe7f8">
+<title>大大小小</title>
+<script>
+/* 首屏前就定档：手机默认关折射（否则会先卡几秒） */
+(function () {
+  var ua = navigator.userAgent;
+  var mob = /Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(ua)
+         || (navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) < 820);
+  var d = document.documentElement;
+  d.setAttribute('data-mob', mob ? '1' : '0');
+  if (mob) d.classList.add('no-refract');
 })();
-</脚本>
-<风格>
-  * { 保证金: 0; 衬垫: 0; 箱体大小: 边框; -webkit-tap-highlight-color: 透明; }
-  :根 {
-    玻璃杯: 格巴(255,255,255,.16);
-    - 玻璃-bg-strong: 格巴(255,255,255,.26);
-    玻璃线: 格巴(255,255,255,.55);
-    墨水#1d2433;
-    - 墨水软#6b7688;
-    影子: 0 10像素 30像素 格巴(31,50,90,.16);
-    - 口音#4a90e2;
+</script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --glass-bg: rgba(255,255,255,.16);
+    --glass-bg-strong: rgba(255,255,255,.26);
+    --glass-line: rgba(255,255,255,.55);
+    --ink: #1d2433;
+    --ink-soft: #6b7688;
+    --shadow: 0 10px 30px rgba(31,50,90,.16);
+    --accent: #4a90e2;
   }
-  HTML, 身体 { 最低高度: 100%; }
-  身体 {
-    字体家族: 苹果系统, 平方, 微软 YaHei, 系统-优, 无衬线;
-    颜色: 瓦尔(墨水);
-    背景#e8eef9;
-    衬垫: 22像素 18像素 40像素;
-    溢出x: 隐藏;
+  html, body { min-height: 100%; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--ink);
+    background: #e8eef9;
+    padding: 22px 18px 40px;
+    overflow-x: hidden;
     position: relative;
     transition: background .5s, color .5s;
     -webkit-font-smoothing: antialiased;
