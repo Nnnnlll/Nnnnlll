@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f8fafd">
+<title>文字转语音</title>
+<link rel="stylesheet" href="tool.css">
+<style>
+  .preset { display: flex; flex-flow: row wrap; gap: 8px; }
+  .slider-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .slider-row .nm { font-size: 12.5px; color: var(--ink-soft); width: 62px; flex: none; }
+  .slider-row .val { font-size: 12.5px; width: 44px; text-align: right; font-variant-numeric: tabular-nums; flex: none; }
+  .speaking { animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .45; } }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="../index.html">← 返回</a>
+    <div><h1>文字转语音</h1><div class="sub">打什么念什么，用手机自带语音引擎</div></div>
+  </div>
+
+  <div class="panel">
+    <textarea id="text" rows="5">你好呀，这里是大大小小的文字转语音。输入什么都行，中文英文都能念。</textarea>
+    <div class="label">音色</div>
+    <select id="voice"><option>正在读取系统音色…</option></select>
+    <div class="label">整活预设</div>
+    <div class="preset" id="presetRow">
+      <div class="opt" data-preset="normal">正常</div>
+      <div class="opt" data-preset="fast">快嘴</div>
+      <div class="opt" data-preset="slow">慢悠</div>
+      <div class="opt" data-preset="girl">少女</div>
+      <div class="opt" data-preset="uncle">大叔</div>
+      <div class="opt" data-preset="robot">机器人</div>
+      <div class="opt" data-preset="chipmunk">花栗鼠</div>
+    </div>
+    <div class="slider-row"><span class="nm">语速</span><input type="range" id="rate" min="0.5" max="2" step="0.05" value="1"><span class="val" id="rateVal">1.00</span></div>
+    <div class="slider-row"><span class="nm">音调</span><input type="range" id="pitch" min="0" max="2" step="0.05" value="1"><span class="val" id="pitchVal">1.00</span></div>
+    <div class="slider-row"><span class="nm">音量</span><input type="range" id="vol" min="0" max="1" step="0.05" value="1"><span class="val" id="volVal">1.00</span></div>
+
+    <div class="row" style="margin-top:16px">
+      <button class="btn primary" id="playBtn">▶ 朗读</button>
+      <button class="btn" id="pauseBtn">⏸ 暂停</button>
+      <button class="btn" id="stopBtn">⏹ 停止</button>
+    </div>
+    <div class="note" id="note">音色来自你手机系统的 TTS 引擎，不联网也能用。如果下拉框是空的，去「系统设置 → 语音合成」装一个中文语音包。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var synth = window.speechSynthesis;
+  var voices = [], queue = [], speaking = false, paused = false;
+
+  if (!synth) {
+    el('note').innerHTML = '<span class="warn">这个浏览器不支持语音合成（speechSynthesis），换 Chrome / Edge 试试。</span>';
+    el('playBtn').disabled = true;
+    return;
+  }
+
+  function zhFirst(a, b) {
+    var az = /^zh/i.test(a.lang) ? 0 : 1, bz = /^zh/i.test(b.lang) ? 0 : 1;
+    if (az !== bz) return az - bz;
+    return (a.name + '').localeCompare(b.name + '');
+  }
+
+  function fillVoices() {
+    voices = synth.getVoices() || [];
+    if (!voices.length) return;
+    voices.sort(zhFirst);
+    el('voice').innerHTML = voices.map(function (v, i) {
+      var label = v.name + ' · ' + (v.lang || '?') + (v.localService ? '' : '（在线）');
+      return '<option value="' + i + '">' + label + '</option>';
+    }).join('');
+    // 默认挑第一个中文音色
+    var idx = 0;
+    for (var i = 0; i < voices.length; i++) { if (/^zh/i.test(voices[i].lang)) { idx = i; break; } }
+    el('voice').value = String(idx);
+    saveLast(idx);
+  }
+
+  function saveLast(i) { try { localStorage.setItem('lzh.tts.voice', String(i)); } catch (e) {} }
+
+  synth.onvoiceschanged = fillVoices;
+  fillVoices();
+  setTimeout(fillVoices, 400);
+  setTimeout(fillVoices, 1500);
+
+  /* 长文本切块（有些手机念太久会自己停） */
+  function chunk(text) {
+    var parts = text.replace(/\s+/g, ' ').match(/[^。！？!?；;\n]+[。！？!?；;\n]?/g) || [];
+    var out = [], cur = '';
+    parts.forEach(function (p) {
+      if ((cur + p).length > 160) { if (cur) out.push(cur); cur = p; }
+      else cur += p;
+    });
+    if (cur) out.push(cur);
+    return out.filter(function (s) { return s.trim(); });
+  }
+
+  function currentVoice() {
+    var i = +el('voice').value;
+    return voices[i] || null;
+  }
+
+  function speak() {
+    var text = el('text').value.trim();
+    if (!text) { el('text').focus(); return; }
+    if (speaking) { synth.cancel(); }
+    queue = chunk(text);
+    speaking = true; paused = false;
+    el('playBtn').classList.add('speaking');
+    el('note').textContent = '正在念…共 ' + queue.length + ' 段。';
+    next();
+  }
+
+  function next() {
+    if (!queue.length) { done(); return; }
+    var piece = queue.shift();
+    var u = new SpeechSynthesisUtterance(piece);
+    var v = currentVoice();
+    if (v) { u.voice = v; u.lang = v.lang; }
+    u.rate = +el('rate').value;
+    u.pitch = +el('pitch').value;
+    u.volume = +el('vol').value;
+    u.onend = function () { if (speaking) next(); };
+    u.onerror = function (e) {
+      if (e && e.error === 'interrupted') return;
+      done();
+      el('note').innerHTML = '<span class="warn">播放出错了（' + (e && e.error || '未知') + '），换个音色试试。</span>';
+    };
+    synth.speak(u);
+  }
+
+  function done() {
+    speaking = false; paused = false;
+    el('playBtn').classList.remove('speaking');
+    el('playBtn').textContent = '▶ 朗读';
+    el('pauseBtn').textContent = '⏸ 暂停';
+  }
+
+  el('playBtn').addEventListener('click', function () {
+    if (speaking && paused) { synth.resume(); paused = false; el('pauseBtn').textContent = '⏸ 暂停'; this.textContent = '▶ 朗读'; return; }
+    this.textContent = '🔊 重念';
+    speak();
+  });
+  el('pauseBtn').addEventListener('click', function () {
+    if (!speaking) return;
+    if (paused) { synth.resume(); paused = false; this.textContent = '⏸ 暂停'; }
+    else { synth.pause(); paused = true; this.textContent = '▶ 继续'; }
+  });
+  el('stopBtn').addEventListener('click', function () {
+    speaking = false; queue = [];
+    synth.cancel();
+    done();
+    el('note').textContent = '已停止。';
+  });
+
+  function bind(id) {
+    el(id).addEventListener('input', function () { el(id + 'Val').textContent = (+this.value).toFixed(2); });
+  }
+  ['rate', 'pitch', 'vol'].forEach(bind);
+
+  var PRESETS = {
+    normal: [1, 1, 1],
+    fast: [1.8, 1, 1],
+    slow: [0.7, 1, 1],
+    girl: [1.1, 1.7, 1],
+    uncle: [0.85, 0.5, 1],
+    robot: [0.65, 0.35, 1],
+    chipmunk: [1.9, 2, 1]
+  };
+  el('presetRow').addEventListener('click', function (e) {
+    var o = e.target.closest('.opt'); if (!o) return;
+    [].forEach.call(this.children, function (c) { c.classList.toggle('active', c === o); });
+    var p = PRESETS[o.dataset.preset];
+    el('rate').value = p[0]; el('rateVal').textContent = (+p[0]).toFixed(2);
+    el('pitch').value = p[1]; el('pitchVal').textContent = (+p[1]).toFixed(2);
+    el('vol').value = p[2]; el('volVal').textContent = (+p[2]).toFixed(2);
+    if (speaking) { synth.cancel(); speaking = false; done(); }
+  });
+  el('voice').addEventListener('change', function () { saveLast(this.value); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f8fafd">
+<title>分贝计 / 调音器</title>
+<link rel="stylesheet" href="tool.css">
+<style>
+  .meter {
+    height: 22px; border-radius: 12px; margin-top: 14px; overflow: hidden;
+    background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.6);
+  }
+  .meter .fill {
+    height: 100%; width: 0%; border-radius: 12px;
+    background: linear-gradient(90deg, #22c55e, #eab308 62%, #ef4444);
+    transition: width .06s linear;
+  }
+  .huge { font-size: 42px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -1.5px; line-height: 1.1; }
+  .note-name { font-size: 54px; font-weight: 700; letter-spacing: -2px; line-height: 1.05; }
+  .needle-wrap { position: relative; height: 46px; margin-top: 16px; }
+  .needle-track {
+    position: absolute; inset: 16px 0 auto 0; height: 14px; border-radius: 8px;
+    background: linear-gradient(90deg, rgba(239,68,68,.35), rgba(34,197,94,.45) 50%, rgba(239,68,68,.35));
+    border: 1px solid rgba(255,255,255,.6);
+  }
+  .needle {
+    position: absolute; top: 8px; left: 50%; width: 3px; height: 30px; border-radius: 3px;
+    background: #3b7cff; transform: translateX(-50%); transition: left .08s linear;
+    box-shadow: 0 0 8px rgba(59,124,255,.6);
+  }
+  .scale { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+  .in-tune { color: #15803d; }
+  .flat { color: #c2410c; }
+  .sharp { color: #1d4ed8; }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="../index.html">← 返回</a>
+    <div><h1>分贝计 / 调音器</h1><div class="sub">用手机麦克风，测噪音、给乐器调音</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="row" id="modeRow">
+      <div class="opt active" data-mode="db">噪音分贝</div>
+      <div class="opt" data-mode="tuner">乐器调音</div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="micBtn">🎤 开启麦克风</button>
+      <span class="dim" id="stateTxt" style="font-size:12.5px">未开启</span>
+    </div>
+  </div>
+
+  <!-- 分贝计 -->
+  <div class="panel" id="dbPanel">
+    <div class="huge" id="dbNow">— dB</div>
+    <div class="meter"><div class="fill" id="dbBar"></div></div>
+    <div class="kv" style="margin-top:16px">
+      <div class="item"><div class="k">峰值</div><div class="v" id="dbPeak">—</div></div>
+      <div class="item"><div class="k">平均</div><div class="v" id="dbAvg">—</div></div>
+      <div class="item"><div class="k">读数</div><div class="v" id="dbDbfs">—</div></div>
+    </div>
+    <div class="label">校准偏移 <span class="dim" id="calVal">94</span>（不同手机麦克风灵敏度不同）</div>
+    <input type="range" id="cal" min="70" max="115" step="1" value="94">
+    <div class="note">读数是用 RMS 电平换算的相对值，不经校准有 ±10 dB 左右误差，适合看「吵不吵」和做对比。参考：静夜 30、正常说话 60、马路边 80、会吵到耳朵 90+。</div>
+  </div>
+
+  <!-- 调音器 -->
+  <div class="panel hidden" id="tunerPanel">
+    <div class="note-name" id="noteName">—</div>
+    <div class="dim" id="noteHz" style="font-size:13px;margin-top:4px">对准一个音，让它响久一点</div>
+    <div class="needle-wrap">
+      <div class="needle-track"></div>
+      <div class="needle" id="needle"></div>
+    </div>
+    <div class="scale"><span>-50 音分（偏低）</span><span>准</span><span>+50（偏高）</span></div>
+    <div class="kv" style="margin-top:14px">
+      <div class="item"><div class="k">音分偏差</div><div class="v" id="centsVal">—</div></div>
+      <div class="item"><div class="k">音量</div><div class="v" id="levelVal">—</div></div>
+    </div>
+    <div class="label">基准音 A4 <span class="dim" id="a4Val">440</span> Hz</div>
+    <input type="range" id="a4" min="415" max="466" step="0.5" value="440">
+    <div class="note">范围大约 60～1500 Hz（吉他、尤克里里、小提琴、人声都在里面）。环境太吵或声音太轻会读不出来，靠近一点、让音持续 1 秒以上。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var ac = null, analyser = null, buf = null, stream = null, raf = null, running = false;
+  var mode = 'db', peak = -Infinity, sum = 0, cnt = 0, lastUi = 0;
+  var NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  function msg(t, cls) { el('stateTxt').innerHTML = '<span class="' + (cls || 'dim') + '">' + t + '</span>'; }
+
+  function start() {
+    if (running) return stop();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      msg('这个浏览器不支持麦克风，或者页面不是 https。', 'warn');
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+    }).then(function (s) {
+      stream = s;
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      ac = new Ctx();
+      var src = ac.createMediaStreamSource(s);
+      analyser = ac.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.6;
+      src.connect(analyser);
+      buf = new Float32Array(analyser.fftSize);
+      running = true;
+      el('micBtn').textContent = '⏹ 关闭麦克风';
+      msg('工作中', 'ok');
+      el('micBtn').classList.remove('primary');
+      loop();
+    }).catch(function (err) {
+      var n = err && err.name;
+      msg(n === 'NotAllowedError' ? '麦克风权限被拒绝了，去浏览器设置里允许一下。' : '打不开麦克风：' + (n || err), 'warn');
+    });
+  }
+
+  function stop() {
+    running = false;
+    cancelAnimationFrame(raf);
+    if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
+    if (ac) { try { ac.close(); } catch (e) {} ac = null; }
+    el('micBtn').textContent = '🎤 开启麦克风';
+    el('micBtn').classList.add('primary');
+    msg('已关闭');
+    el('dbNow').textContent = '— dB';
+    el('dbBar').style.width = '0%';
+  }
+
+  function loop() {
+    if (!running) return;
+    raf = requestAnimationFrame(loop);
+    var now = performance.now();
+    if (now - lastUi < 80) return;              // 手机上限流，别把电烧了
+    lastUi = now;
+    analyser.getFloatTimeDomainData(buf);
+    var rms = 0;
+    for (var i = 0; i < buf.length; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / buf.length);
+    var db = rms > 0 ? 20 * Math.log10(rms) : -100;
+    if (mode === 'db') showDb(db); else showTuner(db);
+  }
+
+  function showDb(db) {
+    var cal = +el('cal').value;
+    var spl = Math.max(0, Math.round(db + cal));
+    peak = Math.max(peak, spl);
+    sum += spl; cnt++;
+    el('dbNow').textContent = spl + ' dB';
+    el('dbBar').style.width = Math.min(100, spl / 110 * 100) + '%';
+    el('dbPeak').textContent = peak + ' dB';
+    el('dbAvg').textContent = Math.round(sum / cnt) + ' dB';
+    el('dbDbfs').textContent = db.toFixed(1) + ' dBFS';
+  }
+
+  /* 自相关求基频 */
+  function pitch() {
+    var SIZE = buf.length, rms = 0;
+    for (var i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.012) return null;
+    var r1 = 0, r2 = SIZE - 1, thres = 0.2;
+    for (var i = 0; i < SIZE / 2; i++) { if (Math.abs(buf[i]) < thres) { r1 = i; break; } }
+    for (var i = 1; i < SIZE / 2; i++) { if (Math.abs(buf[SIZE - i]) < thres) { r2 = SIZE - i; break; } }
+    var b = buf.slice(r1, r2), len = b.length;
+    if (len < 64) return null;
+    var c = new Float32Array(len);
+    for (var i = 0; i < len; i++) {
+      var s = 0;
+      for (var j = 0; j + i < len; j++) s += b[j] * b[j + i];
+      c[i] = s;
+    }
+    var d = 0;
+    while (d < len - 1 && c[d] > c[d + 1]) d++;
+    var maxval = -1, maxpos = -1;
+    for (var i = d; i < len; i++) { if (c[i] > maxval) { maxval = c[i]; maxpos = i; } }
+    if (maxpos <= 0) return null;
+    var T0 = maxpos;
+    var x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1] || c[T0];
+    var a = (x1 + x3 - 2 * x2) / 2, bb = (x3 - x1) / 2;
+    if (a) T0 = T0 - bb / (2 * a);
+    var f = ac.sampleRate / T0;
+    if (f < 55 || f > 1600) return null;
+    return { f: f, rms: rms };
+  }
+
+  function showTuner(db) {
+    var p = pitch();
+    el('levelVal').textContent = Math.round(Math.max(0, db + 94)) + ' dB';
+    if (!p) {
+      el('noteName').textContent = '—';
+      el('noteName').className = 'note-name';
+      el('noteHz').textContent = '声音太小或太吵，再来一次';
+      el('needle').style.left = '50%';
+      el('centsVal').textContent = '—';
+      return;
+    }
+    var a4 = +el('a4').value;
+    var n = 12 * Math.log2(p.f / a4) + 69;
+    var rounded = Math.round(n);
+    var cents = Math.round((n - rounded) * 100);
+    var name = NOTES[((rounded % 12) + 12) % 12] + (Math.floor(rounded / 12) - 1);
+    el('noteName').textContent = name;
+    el('noteName').className = 'note-name ' + (Math.abs(cents) <= 5 ? 'in-tune' : cents < 0 ? 'flat' : 'sharp');
+    el('noteHz').textContent = p.f.toFixed(1) + ' Hz · ' + (Math.abs(cents) <= 5 ? '准了 👍' : cents < 0 ? '偏低 ' + Math.abs(cents) + ' 音分' : '偏高 ' + cents + ' 音分');
+    el('centsVal').textContent = (cents > 0 ? '+' : '') + cents;
+    var pos = Math.max(0, Math.min(100, 50 + cents));
+    el('needle').style.left = pos + '%';
+  }
+
+  el('micBtn').addEventListener('click', start);
+
+  el('modeRow').addEventListener('click', function (e) {
+    var o = e.target.closest('.opt'); if (!o) return;
+    [].forEach.call(this.children, function (c) { c.classList.toggle('active', c === o); });
+    mode = o.dataset.mode;
+    el('dbPanel').classList.toggle('hidden', mode !== 'db');
+    el('tunerPanel').classList.toggle('hidden', mode !== 'tuner');
+    peak = -Infinity; sum = 0; cnt = 0;
+  });
+
+  el('cal').addEventListener('input', function () { el('calVal').textContent = this.value; });
+  el('a4').addEventListener('input', function () { el('a4Val').textContent = this.value; });
+
+  window.addEventListener('pagehide', stop);
+})();
+</script>
+</body>
+</html>

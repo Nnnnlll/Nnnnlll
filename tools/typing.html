@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f8fafd">
+<title>打字速度测试</title>
+<link rel="stylesheet" href="tool.css">
+<style>
+  .target {
+    font-size: 17px; line-height: 2; letter-spacing: .3px;
+    padding: 14px 16px; border-radius: 20px; margin-top: 4px;
+    background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.6);
+    user-select: none; word-break: break-word;
+  }
+  .target span { transition: color .1s; }
+  .c-ok { color: #15803d; }
+  .c-no { color: #dc2626; background: rgba(220,38,38,.12); border-radius: 4px; }
+  .c-cur { background: var(--accent); color: #fff; border-radius: 4px; }
+  .target .pad { color: #94a3b8; }
+  #board { margin-top: 12px; }
+  #board .li {
+    display: flex; justify-content: space-between; gap: 10px;
+    font-size: 13px; padding: 9px 12px; border-radius: 14px;
+    background: rgba(255,255,255,.45); margin-bottom: 6px;
+  }
+  #board .li .sc { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .tleft { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="../index.html">← 返回</a>
+    <div><h1>打字速度测试</h1><div class="sub">照着打，测 WPM 和准确率</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="row" id="modeRow">
+      <div class="opt active" data-mode="zh">中文</div>
+      <div class="opt" data-mode="en">英文</div>
+      <div class="opt" data-mode="mix">数字符号</div>
+    </div>
+    <div class="label">时长</div>
+    <div class="row" id="durRow">
+      <div class="opt active" data-dur="30">30 秒</div>
+      <div class="opt" data-dur="60">60 秒</div>
+    </div>
+    <div class="label">准备</div>
+    <div class="tleft" id="clock">30.0</div>
+  </div>
+
+  <div class="panel">
+    <div class="target" id="target"></div>
+    <div class="label">在这里输入（输入框会自动跟上）</div>
+    <textarea id="input" rows="3" placeholder="点下面的「开始」后在这里打字…" disabled></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="startBtn">开始</button>
+      <button class="btn" id="againBtn">换一段</button>
+    </div>
+    <div class="kv" style="margin-top:16px">
+      <div class="item"><div class="k">速度</div><div class="v" id="wpm">0</div></div>
+      <div class="item"><div class="k">准确率</div><div class="v" id="acc">100%</div></div>
+      <div class="item"><div class="k">已打字数</div><div class="v" id="cnt">0</div></div>
+    </div>
+    <div class="note" id="hint">速度按「正确字符数」算：中文＝字/分钟，英文＝字符÷5/分钟。</div>
+  </div>
+
+  <div class="panel hidden" id="resultPanel">
+    <h2>成绩</h2>
+    <div class="kv">
+      <div class="item"><div class="k">速度</div><div class="v" id="rWpm">0</div></div>
+      <div class="item"><div class="k">准确率</div><div class="v" id="rAcc">0%</div></div>
+      <div class="item"><div class="k">用时</div><div class="v" id="rTime">0s</div></div>
+    </div>
+    <div class="label">存到本地排行榜</div>
+    <div class="row">
+      <input type="text" id="nick" placeholder="昵称" maxlength="10" style="flex:1;min-width:120px">
+      <button class="btn primary" id="saveBtn">保存</button>
+    </div>
+    <div id="board"></div>
+    <div class="note">排行榜只存在你这台手机的浏览器里（localStorage），别人看不到。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var ZH = [
+    '生活不止眼前的苟且，还有诗和远方的田野。你赤手空拳来到人世间，为找到那片海不顾一切。',
+    '我们总以为来日方长，却忘了世事无常。珍惜眼前人，做好手边事，把日子过成自己喜欢的样子。',
+    '晚风轻踩着云朵，月亮在贩售快乐，你从银河万顷中走来，世间美好都与你在这一天撞个满怀。',
+    '读书的意义大概就是用生活所感去读书，用读书所得去生活，让日子有光，让心里有底。',
+    '把每一件简单的事做好就是不简单，把每一件平凡的事做好就是不平凡，慢慢来，比较快。',
+    '窗外有雨，屋里有灯，桌上有热汤，猫在脚边打呼噜，这就是我能想到的，最踏实的幸福。',
+    '愿你走出半生，归来仍是少年。愿你所行皆坦途，所求皆如愿，所遇皆温柔，所爱皆长久。',
+    '人生如逆旅，我亦是行人。既然上了生活的贼船，那就做一个快乐的海盗，一路向前。'
+  ];
+  var EN = [
+    'The quick brown fox jumps over the lazy dog, while the amused cat watches from the window sill.',
+    'Programming is the art of telling another human what one wants the computer to do, clearly and calmly.',
+    'Pack my box with five dozen liquor jugs, then quickly explain how vexingly daft zebras jump.',
+    'A journey of a thousand miles begins with a single step, so take that step before the coffee gets cold.',
+    'Simplicity is the soul of efficiency, and the best code is the code that you never had to write.',
+    'Everything should be made as simple as possible, but not simpler than it truly needs to be.',
+    'The sun set behind the hills, painting the sky in shades of orange, pink and a soft violet blue.',
+    'Keep your face always toward the sunshine, and shadows will fall gently behind you every day.'
+  ];
+  var MIX = [
+    '订单号 A7-2026-0918 金额 128.50 元，折扣 15% 后实付 109.23 元（含税 6%）——请核对 #42。',
+    'IP 192.168.1.107 端口 8080，延迟 23ms，丢包率 0.2%，带宽 100/20 Mbps，正常。',
+    '函数 f(x)=3x^2-7x+2 在 x=1.5 处的值约为 1.25，误差 < 0.01，数据量 ~1.2e5 条。'
+  ];
+  var MODES = { zh: ZH, en: EN, mix: MIX };
+
+  var mode = 'zh', dur = 30, running = false, target = '', t0 = 0, timer = null, ended = false;
+  var el = function (id) { return document.getElementById(id); };
+
+  function pickText() {
+    var arr = MODES[mode];
+    target = arr[Math.floor(Math.random() * arr.length)];
+    if (mode === 'zh') target = target + ' ' + arr[Math.floor(Math.random() * arr.length)];
+    render();
+  }
+
+  function esc(c) { return c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c; }
+
+  function render() {
+    var v = el('input').value, html = '', correct = 0;
+    for (var i = 0; i < target.length; i++) {
+      var cls = '';
+      if (i < v.length) cls = (v[i] === target[i]) ? 'c-ok' : 'c-no';
+      else if (i === v.length && running) cls = 'c-cur';
+      if (i < v.length && v[i] === target[i]) correct++;
+      var ch = target[i];
+      html += '<span class="' + cls + '">' + (ch === ' ' ? '&nbsp;' : esc(ch)) + '</span>';
+    }
+    // 多打出来的字
+    if (v.length > target.length) {
+      var extra = v.slice(target.length);
+      html += '<span class="c-no">' + esc(extra.split('').join('')) + '</span>';
+    }
+    el('target').innerHTML = html;
+    var acc = v.length ? Math.round(correct / v.length * 100) : 100;
+    el('acc').textContent = acc + '%';
+    el('cnt').textContent = String(correct);
+    return correct;
+  }
+
+  function speed(correct, sec) {
+    if (!sec) return 0;
+    var m = sec / 60;
+    return Math.round((mode === 'en' ? correct / 5 : correct) / m);
+  }
+
+  function tick() {
+    var left = dur - (Date.now() - t0) / 1000;
+    el('clock').textContent = Math.max(left, 0).toFixed(1);
+    var correct = render();
+    el('wpm').textContent = String(speed(correct, (Date.now() - t0) / 1000));
+    if (left <= 0) finish();
+  }
+
+  function start() {
+    if (running) return;
+    if (ended || !target) pickText();
+    ended = false;
+    running = true; t0 = Date.now();
+    el('input').value = ''; el('input').disabled = false; el('input').focus();
+    el('startBtn').textContent = '重来';
+    el('resultPanel').classList.add('hidden');
+    clearInterval(timer); timer = setInterval(tick, 100);
+    tick();
+  }
+
+  function finish() {
+    clearInterval(timer);
+    running = false; ended = true;
+    var sec = (Date.now() - t0) / 1000;
+    var correct = render();
+    el('input').disabled = true;
+    el('clock').textContent = '0.0';
+    var acc = el('input').value.length ? Math.round(correct / el('input').value.length * 100) : 100;
+    var sp = speed(correct, sec);
+    el('rWpm').textContent = String(sp) + (mode === 'en' ? ' WPM' : ' 字/分');
+    el('rAcc').textContent = acc + '%';
+    el('rTime').textContent = sec.toFixed(1) + 's';
+    el('resultPanel').classList.remove('hidden');
+    el('resultPanel').dataset.sp = sp;
+    el('resultPanel').dataset.acc = acc;
+    el('resultPanel').dataset.unit = mode === 'en' ? 'WPM' : '字/分';
+    el('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /* 排行榜 */
+  var KEY = 'lzh.typing.v1';
+  function load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
+  function drawBoard() {
+    var list = load().slice(0, 8), box = el('board');
+    if (!list.length) { box.innerHTML = '<div class="note">还没有记录，先跑一局吧。</div>'; return; }
+    box.innerHTML = list.map(function (r, i) {
+      return '<div class="li"><span>' + (i + 1) + '. ' + r.nick + ' <span class="dim">' + r.unit + '</span></span>' +
+        '<span class="sc">' + r.sp + ' · ' + r.acc + '%</span></div>';
+    }).join('');
+  }
+  el('saveBtn').addEventListener('click', function () {
+    var p = el('resultPanel');
+    var nick = (el('nick').value || '无名氏').slice(0, 10);
+    var list = load();
+    list.push({ nick: nick, sp: +p.dataset.sp, acc: +p.dataset.acc, unit: p.dataset.unit, t: Date.now() });
+    list.sort(function (a, b) { return b.sp - a.sp; });
+    try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 30))); } catch (e) {}
+    drawBoard();
+    el('saveBtn').textContent = '已保存';
+    setTimeout(function () { el('saveBtn').textContent = '保存'; }, 1200);
+  });
+
+  /* 交互 */
+  el('modeRow').addEventListener('click', function (e) {
+    var o = e.target.closest('.opt'); if (!o) return;
+    [].forEach.call(this.children, function (c) { c.classList.toggle('active', c === o); });
+    mode = o.dataset.mode; ended = true; running = false;
+    clearInterval(timer); el('clock').textContent = dur.toFixed(1);
+    el('input').value = ''; el('input').disabled = true;
+    el('startBtn').textContent = '开始';
+    pickText();
+  });
+  el('durRow').addEventListener('click', function (e) {
+    var o = e.target.closest('.opt'); if (!o) return;
+    [].forEach.call(this.children, function (c) { c.classList.toggle('active', c === o); });
+    dur = +o.dataset.dur; ended = true; running = false;
+    clearInterval(timer); el('clock').textContent = dur.toFixed(1);
+    el('startBtn').textContent = '开始';
+  });
+  el('startBtn').addEventListener('click', start);
+  el('againBtn').addEventListener('click', function () {
+    ended = false; running = false; clearInterval(timer);
+    el('input').value = ''; el('input').disabled = true;
+    el('startBtn').textContent = '开始';
+    el('clock').textContent = dur.toFixed(1);
+    el('wpm').textContent = '0'; el('acc').textContent = '100%'; el('cnt').textContent = '0';
+    pickText();
+  });
+  el('input').addEventListener('input', function () {
+    if (!running) return;
+    var v = el('input').value;
+    if (v.length > target.length && !target.endsWith(' ')) finish();
+    else if (v === target) finish();
+  });
+
+  el('clock').textContent = dur.toFixed(1);
+  pickText();
+  drawBoard();
+})();
+</script>
+</body>
+</html>

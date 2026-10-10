@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f8fafd">
+<title>反应力 / 手速测试</title>
+<link rel="stylesheet" href="tool.css">
+<style>
+  #pad {
+    height: 240px; border-radius: 26px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    background: rgba(255,255,255,.55); border: 1px solid rgba(255,255,255,.7);
+    transition: background .12s, color .12s; user-select: none; text-align: center; padding: 16px;
+  }
+  #pad .hint-big { font-size: 20px; font-weight: 700; }
+  #pad .hint-sm { font-size: 12.5px; color: var(--ink-soft); }
+  #pad.wait { background: #f59e0b; color: #fff; }
+  #pad.wait .hint-sm { color: rgba(255,255,255,.85); }
+  #pad.go { background: #16a34a; color: #fff; }
+  #pad.go .hint-sm { color: rgba(255,255,255,.9); }
+  #pad.fail { background: #dc2626; color: #fff; }
+  #pad.fail .hint-sm { color: rgba(255,255,255,.9); }
+  .list { display: flex; flex-flow: row wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    padding: 8px 13px; border-radius: 14px; font-size: 13px; font-variant-numeric: tabular-nums;
+    background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.6);
+  }
+  .chip.best { background: rgba(59,124,255,.14); border-color: rgba(59,124,255,.3); color: #1d4ed8; font-weight: 600; }
+  .big2 { font-size: 46px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -2px; line-height: 1.1; }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="../index.html">← 返回</a>
+    <div><h1>反应力 / 手速</h1><div class="sub">等它变绿再点，看你多少毫秒</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="row" id="modeRow">
+      <div class="opt active" data-mode="react">反应力</div>
+      <div class="opt" data-mode="cps">连点手速</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div id="pad">
+      <div class="hint-big" id="padMain">点这里开始</div>
+      <div class="hint-sm" id="padSub">变绿的一瞬间点下去</div>
+    </div>
+    <div class="kv" style="margin-top:16px">
+      <div class="item"><div class="k" id="kMain">本次</div><div class="v" id="vMain">—</div></div>
+      <div class="item"><div class="k">平均</div><div class="v" id="vAvg">—</div></div>
+      <div class="item"><div class="k">最好</div><div class="v" id="vBest">—</div></div>
+      <div class="item"><div class="k" id="kRound">第几轮</div><div class="v" id="vRound">0/5</div></div>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="resetBtn">清空重来</button>
+    </div>
+    <div class="note" id="note">抢跑（还没变绿就点）会判犯规，这一轮回炉重来，不计入成绩。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var pad = el('pad');
+  var mode = 'react', state = 'idle';          // idle | waiting | go | over
+  var results = [], tGo = 0, timer = null, cpsEnd = 0, cpsTimer = null, cpsHits = 0;
+  var ROUNDS = 5, CPS_SEC = 10;
+  var KEY = 'lzh.react.v1';
+
+  function best() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+  function saveBest(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
+
+  /* ── 反应力 ── */
+  function reactIdle() {
+    state = 'idle';
+    pad.className = '';
+    el('padMain').textContent = results.length >= ROUNDS ? '再来一组' : '点这里开始';
+    el('padSub').textContent = '变绿的一瞬间点下去';
+    el('vRound').textContent = results.length + '/' + ROUNDS;
+    if (results.length >= ROUNDS) el('padMain').textContent = '再来一组';
+  }
+
+  function armRound() {
+    state = 'waiting';
+    pad.className = 'wait';
+    el('padMain').textContent = '等…';
+    el('padSub').textContent = '还没好，别急';
+    var delay = 1000 + Math.random() * 2500;
+    timer = setTimeout(function () {
+      state = 'go';
+      pad.className = 'go';
+      tGo = performance.now();
+      el('padMain').textContent = '点！';
+      el('padSub').textContent = '';
+    }, delay);
+  }
+
+  function reactHit() {
+    var ms = Math.round(performance.now() - tGo);
+    clearTimeout(timer);
+    results.push(ms);
+    state = 'idle';
+    pad.className = '';
+    el('vMain').textContent = ms + ' ms';
+    el('padMain').textContent = results.length >= ROUNDS ? '这组跑完了' : '还要 ' + (ROUNDS - results.length) + ' 轮';
+    el('padSub').textContent = '再点一下继续';
+    drawList();
+    if (results.length >= ROUNDS) {
+      state = 'over';
+      var avg = Math.round(results.reduce(function (a, b) { return a + b; }, 0) / results.length);
+      var bst = Math.min.apply(null, results);
+      el('padMain').textContent = '平均 ' + avg + ' ms';
+      el('padSub').textContent = '想再来一组就直接点';
+      var b = best();
+      el('vAvg').textContent = avg + ' ms';
+      if (!b.reactAvg || avg < b.reactAvg) { b.reactAvg = avg; b.reactAt = Date.now(); saveBest(b); el('padSub').textContent = '🎉 破了自己的纪录'; }
+      state = 'idle';
+      results = [];
+      setTimeout(function () { el('padMain').textContent = '再来一组'; }, 1600);
+    }
+  }
+
+  function reactPad() {
+    if (state === 'idle') { results = []; armRound(); return; }
+    if (state === 'waiting') {                 // 抢跑
+      clearTimeout(timer);
+      state = 'idle';
+      pad.className = 'fail';
+      el('padMain').textContent = '抢跑了！';
+      el('padSub').textContent = '等变绿再点，点一下重来';
+      el('vMain').textContent = '犯规';
+    } else if (state === 'go') {
+      reactHit();
+    }
+  }
+
+  function drawList() {
+    var box = el('list');
+    if (!results.length) { box.innerHTML = ''; return; }
+    var bst = Math.min.apply(null, results);
+    box.innerHTML = results.map(function (r) {
+      return '<div class="chip' + (r === bst ? ' best' : '') + '">' + r + ' ms</div>';
+    }).join('');
+  }
+
+  /* ── 连点手速 ── */
+  function cpsPad() {
+    if (state === 'idle') {
+      cpsHits = 0; state = 'go';
+      pad.className = 'go';
+      el('padMain').textContent = '疯狂点！';
+      el('padSub').textContent = CPS_SEC + ' 秒倒计时';
+      cpsEnd = Date.now() + CPS_SEC * 1000;
+      clearInterval(cpsTimer);
+      cpsTimer = setInterval(function () {
+        var left = Math.max(0, (cpsEnd - Date.now()) / 1000);
+        el('padSub').textContent = left.toFixed(1) + ' 秒 · ' + cpsHits + ' 次';
+        if (left <= 0) cpsFinish();
+      }, 60);
+      return;
+    }
+    if (state === 'go') {
+      cpsHits++;
+      el('vMain').textContent = (cpsHits / CPS_SEC).toFixed(1) + ' cps';
+      el('padSub').textContent = Math.max(0, (cpsEnd - Date.now()) / 1000).toFixed(1) + ' 秒 · ' + cpsHits + ' 次';
+      // 连点计数视觉反馈
+      pad.style.transform = 'scale(.995)';
+      setTimeout(function () { pad.style.transform = ''; }, 40);
+    }
+  }
+
+  function cpsFinish() {
+    clearInterval(cpsTimer);
+    state = 'idle';
+    var cps = cpsHits / CPS_SEC;
+    pad.className = '';
+    el('padMain').textContent = cps.toFixed(1) + ' 次/秒';
+    el('padSub').textContent = '共 ' + cpsHits + ' 次，点一下再来';
+    el('vMain').textContent = cps.toFixed(1) + ' cps';
+    el('list').innerHTML = '<div class="chip' + (cps >= 8 ? ' best' : '') + '">' + cps.toFixed(2) + ' cps / ' + cpsHits + ' 次</div>';
+    var b = best();
+    if (!b.cps || cps > b.cps) { b.cps = +cps.toFixed(2); b.cpsAt = Date.now(); saveBest(b); el('padSub').textContent = '🎉 新纪录！点一下再来'; }
+  }
+
+  function applyMode() {
+    clearTimeout(timer); clearInterval(cpsTimer);
+    results = []; state = 'idle'; cpsHits = 0;
+    pad.className = ''; pad.style.transform = '';
+    el('list').innerHTML = '';
+    el('vMain').textContent = '—'; el('vAvg').textContent = '—'; el('vBest').textContent = '—';
+    if (mode === 'react') {
+      el('padMain').textContent = '点这里开始';
+      el('padSub').textContent = '变绿的一瞬间点下去';
+      el('kMain').textContent = '本次';
+      el('kRound').textContent = '第几轮';
+      el('vRound').textContent = '0/5';
+      el('note').textContent = '抢跑（还没变绿就点）会判犯规，这一轮回炉重来，不计入成绩。每组 5 轮，跑完显示平均和最好成绩。';
+      var b = best();
+      el('vBest').textContent = b.reactAvg ? b.reactAvg + ' ms' : '—';
+      el('vAvg').textContent = '—';
+    } else {
+      el('padMain').textContent = '点这里开始';
+      el('padSub').textContent = CPS_SEC + ' 秒内能点多少次';
+      el('kMain').textContent = '本次';
+      el('kRound').textContent = '时长';
+      el('vRound').textContent = CPS_SEC + 's';
+      el('note').textContent = '纯手动连点，手机屏会限制上限。一般人 5～7 cps，职业玩家能到 10 以上。';
+      var b2 = best();
+      el('vBest').textContent = b2.cps ? b2.cps + ' cps' : '—';
+    }
+  }
+
+  pad.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    if (mode === 'react') reactPad(); else cpsPad();
+  });
+
+  el('modeRow').addEventListener('click', function (e) {
+    var o = e.target.closest('.opt'); if (!o) return;
+    [].forEach.call(this.children, function (c) { c.classList.toggle('active', c === o); });
+    mode = o.dataset.mode;
+    applyMode();
+  });
+
+  el('resetBtn').addEventListener('click', applyMode);
+
+  applyMode();
+})();
+</script>
+</body>
+</html>

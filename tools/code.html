@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f8fafd">
+<title>代码运行</title>
+<link rel="stylesheet" href="tool.css">
+<style>
+  .tabs { display: flex; gap: 8px; }
+  .code-area {
+    width: 100%; min-height: 190px; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 13px; line-height: 1.6; tab-size: 2; white-space: pre; overflow-wrap: normal; overflow-x: auto;
+  }
+  .preview-wrap { position: relative; margin-top: 14px; }
+  iframe.preview {
+    width: 100%; height: 280px; border: 1px solid rgba(255,255,255,.7); border-radius: 20px;
+    background: #fff; display: block;
+  }
+  .preview-wrap.full {
+    position: fixed; inset: 0; z-index: 99; margin: 0; padding: 12px;
+    background: rgba(248,250,253,.97); display: flex; flex-direction: column; gap: 10px;
+  }
+  .preview-wrap.full iframe.preview { height: auto; flex: 1; border-radius: 16px; }
+  #out {
+    margin-top: 14px; max-height: 190px; overflow: auto;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.65;
+    background: rgba(255,255,255,.5); border: 1px solid rgba(255,255,255,.6);
+    border-radius: 18px; padding: 12px 14px; white-space: pre-wrap; word-break: break-word;
+  }
+  #out .l { display: block; }
+  #out .l + .l { margin-top: 4px; }
+  .t-err { color: #dc2626; }
+  .t-warn { color: #c2740c; }
+  .t-ok { color: #15803d; }
+  .t-dim { color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div>
+
+<div class="wrap">
+  <div class="top">
+    <a class="back" href="../index.html">← 返回</a>
+    <div><h1>代码运行</h1><div class="sub">HTML / CSS / JS 边写边看，全在本地跑</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="tabs" id="tabRow">
+      <div class="opt active" data-tab="html">HTML</div>
+      <div class="opt" data-tab="css">CSS</div>
+      <div class="opt" data-tab="js">JS</div>
+    </div>
+    <div class="label" id="fileLabel">index.html</div>
+    <textarea id="code" class="code-area" spellcheck="false"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="btn primary" id="runBtn">▶ 运行</button>
+      <button class="btn" id="demoBtn">📄 示例</button>
+      <button class="btn" id="clearBtn">🧹 清空</button>
+      <button class="btn" id="fullBtn">⤢ 全屏预览</button>
+    </div>
+    <div class="preview-wrap" id="previewWrap">
+      <iframe class="preview" id="preview" sandbox="allow-scripts allow-modals allow-forms allow-popups"></iframe>
+    </div>
+    <div class="label">输出（console.log / 报错）</div>
+    <div id="out"><span class="l t-dim">运行后这里会显示 console 输出和错误信息。</span></div>
+    <div class="note">页面在沙盒 iframe 里运行：能跑脚本、能弹窗，但读不到你网站的数据，也拿不到 Cookie，安全。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var el = function (id) { return document.getElementById(id); };
+  var code = {
+    html: '<h1>你好，大大小小 👋</h1>\n<p>点一下按钮试试：</p>\n<button id="b">点我 +1</button>\n<p>次数：<span id="n">0</span></p>',
+    css: 'body {\n  font-family: system-ui, -apple-system, "PingFang SC", sans-serif;\n  padding: 18px;\n  color: #1b2a3f;\n  background: linear-gradient(145deg, #f8fafd, #edf2f9);\n}\nh1 { font-size: 20px; }\nbutton {\n  padding: 10px 16px;\n  border-radius: 14px;\n  border: 1px solid #3b7cff;\n  background: #3b7cff;\n  color: #fff;\n  font-size: 14px;\n}\n#n { color: #3b7cff; font-weight: 700; }',
+    js: 'var i = 0;\nvar b = document.getElementById("b");\nb.onclick = function () {\n  i++;\n  document.getElementById("n").textContent = i;\n  console.log("点了 " + i + " 次");\n};\nconsole.log("脚本跑起来了 ✅");'
+  };
+  var tab = 'html';
+
+  function show() { el('code').value = code[tab]; el('fileLabel').textContent = tab === 'html' ? 'index.html（body 内容）' : tab === 'css' ? 'style.css' : 'script.js'; }
+
+  el('code').addEventListener('input', function () { code[tab] = this.value; });
+
+  el('tabRow').addEventListener('click', function (e) {
+    var o = e.target.closest('.opt'); if (!o) return;
+    [].forEach.call(this.children, function (c) { c.classList.toggle('active', c === o); });
+    tab = o.dataset.tab;
+    show();
+  });
+
+  function outLine(text, cls) {
+    var box = el('out');
+    if (box.dataset.fresh !== '1') { box.innerHTML = ''; box.dataset.fresh = '1'; }
+    var d = document.createElement('span');
+    d.className = 'l ' + (cls || '');
+    d.textContent = text;
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || !d.__code) return;
+    var cls = d.type === 'error' ? 't-err' : d.type === 'warn' ? 't-warn' : d.type === 'sys' ? 't-ok' : '';
+    outLine((d.type === 'error' ? '✖ ' : d.type === 'warn' ? '⚠ ' : d.type === 'sys' ? '✔ ' : '› ') + d.text, cls);
+  });
+
+  function hook() {
+    return "(function(){function s(t,a){try{parent.postMessage({__code:1,type:t,text:a.map(function(x){try{return typeof x==='object'&&x!==null?JSON.stringify(x):String(x)}catch(e){return String(x)}}).join(' ')},'*')}catch(e){}}" +
+      "['log','info','debug'].forEach(function(m){var o=console[m];console[m]=function(){s(m,[].slice.call(arguments));o&&o.apply(console,arguments)}});" +
+      "['warn','error'].forEach(function(m){var o=console[m];console[m]=function(){s(m,[].slice.call(arguments));o&&o.apply(console,arguments)}});" +
+      "window.onerror=function(msg,src,l,c){s('error',[msg+(l?'（第 '+l+' 行）':'')]);return false};" +
+      "window.addEventListener('unhandledrejection',function(e){s('error',['未处理的 Promise 拒绝: '+e.reason])});" +
+      "})();";
+  }
+
+  function buildDoc() {
+    var js = (code.js || '').replace(/<\/script/gi, '<\\/script');
+    return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<style>' + (code.css || '') + '</style></head><body>' +
+      (code.html || '') +
+      '<script>' + hook() + '\n' + js + '<\/script>' +
+      '</body></html>';
+  }
+
+  function run() {
+    el('out').dataset.fresh = '';
+    outLine('运行于 ' + new Date().toLocaleTimeString(), 't-dim');
+    el('preview').srcdoc = buildDoc();
+  }
+
+  el('runBtn').addEventListener('click', run);
+  el('demoBtn').addEventListener('click', function () {
+    code.html = '<h1>你好，大大小小 👋</h1>\n<p>点一下按钮试试：</p>\n<button id="b">点我 +1</button>\n<p>次数：<span id="n">0</span></p>';
+    code.css = 'body {\n  font-family: system-ui, -apple-system, "PingFang SC", sans-serif;\n  padding: 18px;\n  color: #1b2a3f;\n  background: linear-gradient(145deg, #f8fafd, #edf2f9);\n}\nh1 { font-size: 20px; }\nbutton {\n  padding: 10px 16px;\n  border-radius: 14px;\n  border: 1px solid #3b7cff;\n  background: #3b7cff;\n  color: #fff;\n  font-size: 14px;\n}\n#n { color: #3b7cff; font-weight: 700; }';
+    code.js = 'var i = 0;\nvar b = document.getElementById("b");\nb.onclick = function () {\n  i++;\n  document.getElementById("n").textContent = i;\n  console.log("点了 " + i + " 次");\n};\nconsole.log("脚本跑起来了 ✅");';
+    show();
+    tab = 'html';
+    [].forEach.call(el('tabRow').children, function (c) { c.classList.toggle('active', c.dataset.tab === 'html'); });
+    run();
+  });
+  el('clearBtn').addEventListener('click', function () {
+    code[tab] = ''; el('code').value = '';
+    if (tab === 'html') run();
+  });
+  el('fullBtn').addEventListener('click', function () {
+    var w = el('previewWrap');
+    if (w.classList.contains('full')) {
+      w.classList.remove('full');
+      this.textContent = '⤢ 全屏预览';
+      document.body.style.overflow = '';
+    } else {
+      w.classList.add('full');
+      this.textContent = '✕ 退出全屏';
+      document.body.style.overflow = 'hidden';
+    }
+  });
+
+  show();
+  run();
+})();
+</script>
+</body>
+</html>
