@@ -234,6 +234,16 @@
   body.dark .song-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.13); }
   body.dark .song-btn.playing { background: var(--accent); border-color: var(--accent); }
   body.dark #closeSetting { background: rgba(255,255,255,.1); }
+/* 游戏弹窗 */
+.gamemodal{position:fixed;inset:0;z-index:99;display:none}
+.gamemodal.on{display:block}
+.gamemodal-mask{position:absolute;inset:0;background:rgba(6,10,22,.55)}
+.gamemodal-box{position:absolute;left:0;right:0;top:0;bottom:0;margin:auto;width:min(96vw,560px);height:min(88vh,900px);display:flex;flex-direction:column;overflow:hidden;border-radius:18px}
+.gamemodal-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;font-weight:700;font-size:14px}
+.gamemodal-acts{display:flex;align-items:center;gap:10px}
+.gamemodal-acts a{font-size:12px;opacity:.8;text-decoration:none;color:inherit}
+.gamemodal-acts button{border:0;background:transparent;font-size:17px;line-height:1;color:inherit;cursor:pointer;padding:2px 4px}
+#gameFrame{flex:1;width:100%;border:0;background:#0d1220}
 </style>
 </head>
 <body>
@@ -309,7 +319,7 @@
       <div class="name">快手</div>
     </a>
 
-    <a class="card glass lite" href="#" onclick="alert('小游戏即将上线，敬请期待'); return false;">
+    <a class="card glass lite" href="#" onclick="openGame(); return false;">
       <div class="icon">🎮</div>
       <div class="name">Game</div>
     </a>
@@ -330,6 +340,21 @@
   </section>
 
   <footer>作者：林紫涵，+10086</footer>
+</div>
+
+<!-- 游戏弹窗 -->
+<div class="gamemodal" id="gameModal" aria-hidden="true">
+  <div class="gamemodal-mask" onclick="closeGame()"></div>
+  <div class="gamemodal-box glass">
+    <div class="gamemodal-bar">
+      <span>🐸 奶蛙 2048</span>
+      <div class="gamemodal-acts">
+        <a href="https://yhsome.github.io/Nai2048/" target="_blank" rel="noopener">新窗口打开</a>
+        <button type="button" onclick="closeGame()" aria-label="关闭">✕</button>
+      </div>
+    </div>
+    <iframe id="gameFrame" title="奶蛙 2048" data-src="https://yhsome.github.io/Nai2048/" allowfullscreen></iframe>
+  </div>
 </div>
 
 <script src="hyalite.js"></script>
@@ -521,6 +546,27 @@
     });
   }
 })();
+</script>
+
+<script>
+function openGame() {
+  var m = document.getElementById('gameModal');
+  var f = document.getElementById('gameFrame');
+  if (f && !f.getAttribute('src')) f.setAttribute('src', f.getAttribute('data-src'));
+  m.classList.add('on');
+  m.setAttribute('aria-hidden', 'false');
+  document.documentElement.style.overflow = 'hidden';
+  return false;
+}
+function closeGame() {
+  var m = document.getElementById('gameModal');
+  m.classList.remove('on');
+  m.setAttribute('aria-hidden', 'true');
+  document.documentElement.style.overflow = '';
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeGame();
+});
 </script>
 
 </body>
