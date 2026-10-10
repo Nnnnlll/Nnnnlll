@@ -2,149 +2,218 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#dfe7f8">
 <title>大大小小</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: linear-gradient(135deg, #eef1f7 0%, #e3e9f5 100%);
-    color: #222; padding: 20px; min-height: 100vh;
-    position: relative; overflow-x: hidden;
-    transition: background .4s, color .4s;
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --glass-bg: rgba(255,255,255,.16);
+    --glass-bg-strong: rgba(255,255,255,.26);
+    --glass-line: rgba(255,255,255,.55);
+    --ink: #1d2433;
+    --ink-soft: #6b7688;
+    --shadow: 0 10px 30px rgba(31,50,90,.16);
+    --accent: #4a90e2;
   }
-  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: var(--ink);
+    background: #e8eef9;
+    padding: 22px 18px 40px;
+    overflow-x: hidden;
+    position: relative;
+    transition: background .5s, color .5s;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── 背景：流动色斑（折射需要底下有东西） ── */
+  .bg { position: fixed; inset: -20%; z-index: 0; pointer-events: none; }
+  .blob {
+    position: absolute; width: 62vw; height: 62vw; max-width: 520px; max-height: 520px;
+    border-radius: 50%; filter: blur(60px); opacity: .78;
+    will-change: transform;
+  }
+  .b1 { background: #7fb6ff; top: -6%;  left: -12%; animation: drift1 26s ease-in-out infinite alternate; }
+  .b2 { background: #ff9ec4; top: 26%;  right: -18%; animation: drift2 31s ease-in-out infinite alternate; }
+  .b3 { background: #a6f0d8; bottom: -12%; left: 4%; animation: drift3 29s ease-in-out infinite alternate; }
+  .b4 { background: #ffd98a; bottom: 22%; right: 6%; animation: drift4 34s ease-in-out infinite alternate; }
+  @keyframes drift1 { to { transform: translate3d(14vw, 10vh, 0) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate3d(-16vw, 12vh, 0) scale(1.1); } }
+  @keyframes drift3 { to { transform: translate3d(12vw, -14vh, 0) scale(1.2); } }
+  @keyframes drift4 { to { transform: translate3d(-10vw, -10vh, 0) scale(1.05); } }
+
+  /* ── 漂浮物层 ── */
+  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
   .float { position: absolute; }
   .bubble {
     border-radius: 50%;
-    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(210,235,255,0.55) 30%, rgba(150,200,255,0.25) 65%, rgba(120,170,255,0.08) 100%);
-    box-shadow: inset -3px -4px 8px rgba(255,255,255,0.7), inset 3px 4px 10px rgba(90,140,220,0.25), 0 0 8px rgba(180,215,255,0.4);
+    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(210,235,255,.55) 30%, rgba(150,200,255,.25) 65%, rgba(120,170,255,.08) 100%);
+    box-shadow: inset -3px -4px 8px rgba(255,255,255,.7), inset 3px 4px 10px rgba(90,140,220,.25), 0 0 8px rgba(180,215,255,.4);
     animation: floatUp linear infinite;
   }
- .leaf {
-  width: 14px; height: 14px;
-  background: radial-gradient(circle at 30% 30%, #ffcf7a, #e08a2e 60%, #a85a12);
-  border-radius: 0 70% 0 70%;
-  box-shadow: 0 0 4px rgba(180,120,40,0.5);
-  animation: fallSpin linear infinite;
-}
-.rain {
-  width: 2px; height: 16px;
-  background: linear-gradient(to bottom, rgba(180,215,255,0.1), rgba(120,180,255,0.85));
-  border-radius: 2px;
-  box-shadow: 0 0 4px rgba(140,190,255,0.6);
-  animation: rainFall linear infinite;
-}
-.snow {
-  width: 12px; height: 12px;
-  background: radial-gradient(circle, #ffffff 0%, #e8f4ff 60%, rgba(230,245,255,0.2) 100%);
-  border-radius: 50%;
-  box-shadow: 0 0 6px rgba(255,255,255,0.9), 0 0 12px rgba(200,230,255,0.6);
-  animation: fallSpin linear infinite;
-}
-.star {
-  width: 10px; height: 10px;
-  background: radial-gradient(circle, #fff7c2 0%, #ffd84a 55%, rgba(255,200,60,0.1) 100%);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-  box-shadow: 0 0 8px rgba(255,220,90,0.9);
-  animation: fallSpin linear infinite;
-}
-.heart {
-  width: 14px; height: 14px;
-  background: radial-gradient(circle at 35% 35%, #ff9bb0, #ff4d6d 60%, #c81e3f);
-  clip-path: path('M7 13 C-2 6 0 0 4 0 C6 0 7 2 7 2 C7 2 8 0 10 0 C14 0 16 6 7 13 Z');
-  box-shadow: 0 0 6px rgba(255,90,120,0.7);
-  animation: fallSpin linear infinite;
-}
- @keyframes floatUp {
-  0% { transform: translateY(0) scale(1) rotate(0deg); opacity: .7; }
-  100% { transform: translateY(-115vh) scale(1.15) rotate(20deg); opacity: 0; }
-}
-@keyframes fallSpin {
-  0% { transform: translateY(-12vh) rotate(0deg); opacity: .95; }
-  100% { transform: translateY(112vh) rotate(360deg); opacity: 0; }
-}
-@keyframes rainFall {
-  0% { transform: translateY(-12vh); opacity: .85; }
-  100% { transform: translateY(112vh); opacity: 0; }
-}
-.wrap { position: relative; z-index: 2; }
-h1 { font-size: 22px; margin-bottom: 6px; }
-.sub { color: #888; font-size: 13px; margin-bottom: 20px; }
-.section-title { font-size: 15px; font-weight: 600; margin: 22px 0 12px; color: #444; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 14px; }
- .card {
-  background: linear-gradient(145deg,#fff,#f0f3f9);
-  border-radius: 14px; padding: 16px; text-decoration: none; color: inherit;
-  box-shadow: 6px 6px 14px rgba(0,0,0,0.12), -6px -6px 14px rgba(255,255,255,0.9);
-  transition: transform .15s, box-shadow .15s, background .4s, color .4s;
-  display: block; cursor: pointer;
-}
-.card:hover { transform: translateY(-3px); box-shadow: 10px 10px 20px rgba(0,0,0,0.16), -8px -8px 18px rgba(255,255,255,0.95); }
-.card:active { transform: translateY(1px) scale(0.98); box-shadow: inset 4px 4px 10px rgba(0,0,0,0.12), inset -4px -4px 10px rgba(255,255,255,0.9); }
-.card .icon { font-size: 26px; margin-bottom: 8px; }
-.card .name { font-size: 15px; font-weight: 600; }
-.card .desc { font-size: 12px; color: #999; line-height: 1.4; margin-top: 2px; }
- #settingBtn {
-  position: fixed; top: 16px; right: 16px; width: 42px; height: 42px;
-  border-radius: 50%; border: none; background: #fff; font-size: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 30;
-  transition: background .4s, color .4s;
-}
-#settingPanel {
-  position: fixed; top: 0; right: -320px; width: 300px; max-width: 85vw;
-  height: 100%; background: #fff; box-shadow: -6px 0 20px rgba(0,0,0,0.15);
-  padding: 22px; transition: right .3s ease, background .4s; z-index: 40;
-  overflow-y: auto;
-}
-#settingPanel.open { right: 0; }
-#settingPanel h2 { font-size: 17px; margin-bottom: 16px; }
-.setting-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;
-}
-.setting-label { font-size: 14px; margin: 14px 0 8px; color: #666; }
-.opts { display: flex; flex-wrap: wrap; gap: 8px; }
-.opt {
-  padding: 7px 12px; border-radius: 10px; border: 1px solid #dde3ee;
-  background: #f4f7fc; font-size: 13px; cursor: pointer; color: #444;
-  transition: all .15s;
-}
-.opt.active { background: #4a90e2; color: #fff; border-color: #4a90e2; }
-   .switch { position: relative; width: 44px; height: 24px; background: #ccc; border-radius: 12px; cursor: pointer; transition: background .2s; }
-  .switch.on { background: #4a90e2; }
-  .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: left .2s; }
-  .switch.on::after { left: 22px; }
-  #closeSetting { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: #888; }
-  .player { margin-top: 26px; background: linear-gradient(145deg,#fff,#eef1f7); border-radius: 16px; padding: 16px; box-shadow: 6px 6px 14px rgba(0,0,0,0.1), -6px -6px 14px rgba(255,255,255,0.9); transition: background .4s; }
-  .player .title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
-  .song-list { display: flex; flex-direction: column; gap: 8px; }
-  .song-btn { text-align: left; padding: 10px 12px; border: none; border-radius: 10px; background: #eef1f7; font-size: 13px; cursor: pointer; color: #333; transition: background .15s; }
-  .song-btn:hover { background: #e2e8f4; }
-  .song-btn.playing { background: #4a90e2; color: #fff; }
-  .now-playing { margin-top: 12px; font-size: 13px; color: #666; min-height: 18px; }
-  audio { width: 100%; margin-top: 10px; }
-  footer { margin-top: 34px; text-align: center; font-size: 12px; color: #aaa; }
-  body.dark { background: linear-gradient(135deg,#151922 0%,#1d2330 100%); color: #e6e9ef; }
-  body.dark .card { background: linear-gradient(145deg,#232a38,#1b212c); box-shadow: 6px 6px 14px rgba(0,0,0,0.5), -6px -6px 14px rgba(60,70,90,0.15); color: #e6e9ef; }
-  body.dark #settingBtn { background: #232a38; color: #e6e9ef; }
-  body.dark #settingPanel { background: #1d2330; color: #e6e9ef; }
-  body.dark .setting-row { border-bottom-color: #2a3342; }
-  body.dark .opt { background: #232a38; border-color: #33405a; color: #c9d1de; }
-  body.dark .opt.active { background: #4a90e2; color: #fff; }
-  body.dark .player { background: linear-gradient(145deg,#232a38,#1b212c); }
-  body.dark .song-btn { background: #232a38; color: #c9d1de; }
-  body.dark .section-title, body.dark h1 { color: #e6e9ef; }
-  body.dark .sub, body.dark .now-playing { color: #8894a8; }
+  .leaf {
+    background: radial-gradient(circle at 30% 30%, #ffcf7a, #e08a2e 60%, #a85a12);
+    border-radius: 0 70% 0 70%;
+    box-shadow: 0 0 4px rgba(180,120,40,.5);
+    animation: fallSpin linear infinite;
+  }
+  .rain {
+    width: 2px; background: linear-gradient(to bottom, rgba(180,215,255,.1), rgba(120,180,255,.85));
+    border-radius: 2px; box-shadow: 0 0 4px rgba(140,190,255,.6);
+    animation: rainFall linear infinite;
+  }
+  .snow {
+    background: radial-gradient(circle, #fff 0%, #e8f4ff 60%, rgba(230,245,255,.2) 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255,255,255,.9), 0 0 12px rgba(200,230,255,.6);
+    animation: fallSpin linear infinite;
+  }
+  .star {
+    background: radial-gradient(circle, #fff7c2 0%, #ffd84a 55%, rgba(255,200,60,.1) 100%);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    box-shadow: 0 0 8px rgba(255,220,90,.9);
+    animation: fallSpin linear infinite;
+  }
+  .heart {
+    background: radial-gradient(circle at 35% 35%, #ff9bb0, #ff4d6d 60%, #c81e3f);
+    clip-path: path('M7 13 C-2 6 0 0 4 0 C6 0 7 2 7 2 C7 2 8 0 10 0 C14 0 16 6 7 13 Z');
+    box-shadow: 0 0 6px rgba(255,90,120,.7);
+    animation: fallSpin linear infinite;
+  }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1) rotate(0); opacity: .7; } 100% { transform: translateY(-115vh) scale(1.15) rotate(20deg); opacity: 0; } }
+  @keyframes fallSpin { 0% { transform: translateY(-12vh) rotate(0); opacity: .95; } 100% { transform: translateY(112vh) rotate(360deg); opacity: 0; } }
+  @keyframes rainFall { 0% { transform: translateY(-12vh); opacity: .85; } 100% { transform: translateY(112vh); opacity: 0; } }
+
+  /* ── 液态玻璃基类（hyalite 注入真实折射） ── */
+  .glass {
+    position: relative;
+    border-radius: 26px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-line);
+    backdrop-filter: var(--hyalite, blur(14px) saturate(180%));
+    -webkit-backdrop-filter: var(--hyalite, blur(14px) saturate(180%));
+    box-shadow: var(--hyalite-edge, none), var(--shadow);
+    transition: background .4s, border-color .4s, box-shadow .4s, transform .18s;
+  }
+  /* 顶部高光，让玻璃看起来有厚度 */
+  .glass::after {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(160deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,.12) 26%, rgba(255,255,255,0) 52%);
+    mix-blend-mode: screen; opacity: .7;
+  }
+
+  .wrap { position: relative; z-index: 2; max-width: 720px; margin: 0 auto; }
+
+  .hero { padding: 20px 22px; margin-bottom: 26px; }
+  .hero h1 { font-size: 26px; font-weight: 700; letter-spacing: .5px; }
+  .hero .sub { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+
+  .section-title { font-size: 14px; font-weight: 600; color: var(--ink-soft); margin: 0 0 12px 6px; letter-spacing: 1px; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+
+  .card {
+    display: block; text-decoration: none; color: inherit;
+    padding: 18px 16px; cursor: pointer; border-radius: 24px;
+  }
+  .card:hover { transform: translateY(-3px); }
+  .card:active { transform: translateY(1px) scale(.985); }
+  .card .icon { font-size: 28px; margin-bottom: 10px; }
+  .card .name { font-size: 15px; font-weight: 600; }
+  .card .desc { font-size: 12px; color: var(--ink-soft); line-height: 1.45; margin-top: 3px; }
+
+  /* 玻璃按钮（不做折射，省性能） */
+  .glass-btn {
+    border: 1px solid var(--glass-line);
+    background: var(--glass-bg-strong);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    box-shadow: 0 6px 18px rgba(31,50,90,.16);
+    color: inherit;
+  }
+  #settingBtn {
+    position: fixed; top: 16px; right: 16px; width: 44px; height: 44px;
+    border-radius: 50%; font-size: 19px; cursor: pointer; z-index: 30;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #settingBtn:active { transform: scale(.94); }
+
+  #settingPanel {
+    position: fixed; top: 14px; right: -330px; width: 300px; max-width: 86vw;
+    max-height: calc(100vh - 28px); overflow-y: auto;
+    padding: 22px; border-radius: 28px; z-index: 40;
+    transition: right .35s cubic-bezier(.4,0,.2,1), background .4s, border-color .4s;
+  }
+  #settingPanel.open { right: 14px; }
+  #settingPanel h2 { font-size: 17px; margin-bottom: 14px; }
+  #closeSetting {
+    position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border: none;
+    border-radius: 50%; font-size: 15px; cursor: pointer; color: var(--ink-soft);
+    background: rgba(255,255,255,.35);
+  }
+  .setting-label { font-size: 12px; color: var(--ink-soft); margin: 16px 0 8px; letter-spacing: .5px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opt {
+    padding: 7px 13px; border-radius: 14px; font-size: 13px; cursor: pointer;
+    color: var(--ink); border: 1px solid rgba(255,255,255,.5);
+    background: rgba(255,255,255,.3); backdrop-filter: blur(8px);
+    transition: all .16s;
+  }
+  .opt.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 4px 12px rgba(74,144,226,.4); }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0 4px; font-size: 14px; }
+  .switch { position: relative; width: 46px; height: 26px; background: rgba(120,130,150,.4); border-radius: 13px; cursor: pointer; transition: background .25s; }
+  .switch.on { background: var(--accent); }
+  .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: left .25s; box-shadow: 0 2px 5px rgba(0,0,0,.2); }
+  .switch.on::after { left: 23px; }
+
+  .player { margin-top: 26px; padding: 20px; border-radius: 26px; }
+  .player .title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .song-list { display: flex; flex-direction: column; gap: 9px; }
+  .song-btn {
+    text-align: left; padding: 11px 14px; border-radius: 16px; font-size: 13px; cursor: pointer;
+    color: var(--ink); font-family: inherit;
+    border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.28);
+    backdrop-filter: blur(8px); transition: all .16s;
+  }
+  .song-btn:hover { background: rgba(255,255,255,.45); }
+  .song-btn.playing { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 6px 16px rgba(74,144,226,.35); }
+  .now-playing { margin-top: 14px; font-size: 13px; color: var(--ink-soft); min-height: 18px; }
+  audio { width: 100%; margin-top: 10px; border-radius: 14px; }
+
+  footer { margin-top: 34px; text-align: center; font-size: 12px; color: var(--ink-soft); opacity: .8; }
+
+  /* ── 暗色 ── */
+  body.dark {
+    --glass-bg: rgba(255,255,255,.07);
+    --glass-bg-strong: rgba(255,255,255,.1);
+    --glass-line: rgba(255,255,255,.14);
+    --ink: #e8ecf4;
+    --ink-soft: #909ab0;
+    --shadow: 0 10px 30px rgba(0,0,0,.45);
+    background: #10141c;
+  }
+  body.dark .blob { opacity: .5; }
+  body.dark .glass::after { opacity: .28; }
+  body.dark .opt { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
+  body.dark .opt.active { background: var(--accent); border-color: var(--accent); }
+  body.dark .song-btn { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.13); }
+  body.dark .song-btn.playing { background: var(--accent); border-color: var(--accent); }
+  body.dark #closeSetting { background: rgba(255,255,255,.1); }
 </style>
 </head>
 <body>
 
+<div class="bg">
+  <span class="blob b1"></span><span class="blob b2"></span>
+  <span class="blob b3"></span><span class="blob b4"></span>
+</div>
 <div id="floatLayer"></div>
 
-<button id="settingBtn">⚙️</button>
+<button id="settingBtn" class="glass-btn">⚙️</button>
 
-<div id="settingPanel">
+<div id="settingPanel" class="glass">
   <button id="closeSetting">✕</button>
   <h2>设置</h2>
 
@@ -166,34 +235,38 @@ h1 { font-size: 22px; margin-bottom: 6px; }
     <div class="opt" data-count="35">多</div>
   </div>
 
-  <div class="setting-row" style="margin-top:18px;">
+  <div class="setting-row">
     <span>暗色模式</span>
     <div class="switch" id="darkSwitch"></div>
   </div>
 </div>
-<div class="wrap">
-  <h1>大大小小</h1>
-  <div class="sub">收录好用的小工具</div>
+
+<div class="wrap" id="app">
+
+  <header class="hero glass">
+    <h1>大大小小</h1>
+    <div class="sub">收录好用的小工具</div>
+  </header>
 
   <div class="section-title">滴滴滴</div>
   <div class="grid">
 
-    <a class="card" href="https://www.douyin.com" target="_blank">
+    <a class="card glass" href="https://www.douyin.com" target="_blank" rel="noopener">
       <div class="icon">🎵</div>
       <div class="name">抖音</div>
     </a>
 
-    <a class="card" href="https://www.kuaishou.com" target="_blank">
+    <a class="card glass" href="https://www.kuaishou.com" target="_blank" rel="noopener">
       <div class="icon">🎬</div>
       <div class="name">快手</div>
     </a>
 
-    <a class="card" href="#" onclick="alert('小游戏即将上线，敬请期待'); return false;">
+    <a class="card glass" href="#" onclick="alert('小游戏即将上线，敬请期待'); return false;">
       <div class="icon">🎮</div>
       <div class="name">Game</div>
     </a>
 
-    <a class="card" href="#" onclick="alert('等待更新'); return false;">
+    <a class="card glass" href="#" onclick="alert('等待更新'); return false;">
       <div class="icon">⏳</div>
       <div class="name">未完待续</div>
       <div class="desc">更多内容，敬请期待</div>
@@ -201,20 +274,23 @@ h1 { font-size: 22px; margin-bottom: 6px; }
 
   </div>
 
-  <div class="player">
+  <section class="player glass">
     <div class="title">🎧 音乐播放器</div>
     <div class="song-list" id="songList"></div>
     <div class="now-playing" id="nowPlaying">选择一首歌开始播放</div>
-    <audio id="audio" controls></audio>
-  </div>
+    <audio id="audio" controls preload="none"></audio>
+  </section>
 
   <footer>作者：林紫涵，+10086</footer>
 </div>
+
+<script src="hyalite.js"></script>
 <script>
+(function () {
+  /* ── 漂浮物 ── */
   var floatLayer = document.getElementById('floatLayer');
   var currentType = 'bubble';
   var currentCount = 20;
-
   function rand(a, b) { return Math.random() * (b - a) + a; }
 
   function renderFloat() {
@@ -223,30 +299,24 @@ h1 { font-size: 22px; margin-bottom: 6px; }
     for (var i = 0; i < currentCount; i++) {
       var el = document.createElement('div');
       el.className = 'float ' + currentType;
-      var size, dur, delay;
-      if (currentType === 'bubble') { size = rand(12, 46); }
-      else if (currentType === 'rain') { size = rand(1.2, 2.4); }
-      else if (currentType === 'star') { size = rand(7, 16); }
-      else if (currentType === 'heart') { size = rand(9, 20); }
-      else if (currentType === 'snow') { size = rand(6, 15); }
-      else { size = rand(9, 20); }
+      var size;
+      if (currentType === 'bubble') size = rand(12, 46);
+      else if (currentType === 'rain') size = rand(1.2, 2.4);
+      else if (currentType === 'star') size = rand(7, 16);
+      else if (currentType === 'heart') size = rand(9, 20);
+      else if (currentType === 'snow') size = rand(6, 15);
+      else size = rand(9, 20);
+
+      el.style.left = rand(0, 100) + 'vw';
       if (currentType === 'bubble') {
         el.style.width = size + 'px';
         el.style.height = size + 'px';
-        el.style.left = rand(0, 100) + 'vw';
         el.style.bottom = '-60px';
-        dur = rand(8, 18);
-        el.style.animationDuration = dur + 's';
+        el.style.animationDuration = rand(8, 18) + 's';
         el.style.animationDelay = rand(0, 8) + 's';
       } else {
-        if (currentType === 'rain') {
-          el.style.width = size + 'px';
-          el.style.height = rand(14, 22) + 'px';
-        } else {
-          el.style.width = size + 'px';
-          el.style.height = size + 'px';
-        }
-        el.style.left = rand(0, 100) + 'vw';
+        el.style.width = size + 'px';
+        el.style.height = (currentType === 'rain' ? rand(14, 22) : size) + 'px';
         el.style.top = '-40px';
         el.style.animationDuration = rand(6, 15) + 's';
         el.style.animationDelay = rand(0, 8) + 's';
@@ -255,18 +325,34 @@ h1 { font-size: 22px; margin-bottom: 6px; }
     }
   }
   renderFloat();
-   var settingBtn = document.getElementById('settingBtn');
+
+  /* ── 液态玻璃（hyalite）── */
+  try {
+    if (typeof Hyalite !== 'undefined') {
+      Hyalite.watch(document.getElementById('app'), '.glass', {
+        bevel: 24, thickness: 36, slope: 2.2,
+        dispersion: 1.2, shade: 0.42, rim: 1.5,
+        blur: 1, sat: 0.86, edge: 0.3, materialize: 260
+      });
+      Hyalite.attach(document.getElementById('settingPanel'), {
+        bevel: 22, thickness: 32, dispersion: 1.1, materialize: 260
+      });
+    }
+  } catch (e) { /* 不支持时自动退回普通模糊 */ }
+
+  /* ── 设置面板 ── */
+  var settingBtn = document.getElementById('settingBtn');
   var settingPanel = document.getElementById('settingPanel');
   var closeSetting = document.getElementById('closeSetting');
   var darkSwitch = document.getElementById('darkSwitch');
 
-  settingBtn.onclick = function() { settingPanel.classList.add('open'); };
-  closeSetting.onclick = function() { settingPanel.classList.remove('open'); };
+  settingBtn.onclick = function () { settingPanel.classList.add('open'); };
+  closeSetting.onclick = function () { settingPanel.classList.remove('open'); };
 
   var typeOpts = document.querySelectorAll('#typeOpts .opt');
-  typeOpts.forEach(function(opt) {
-    opt.onclick = function() {
-      typeOpts.forEach(function(o) { o.classList.remove('active'); });
+  typeOpts.forEach(function (opt) {
+    opt.onclick = function () {
+      typeOpts.forEach(function (o) { o.classList.remove('active'); });
       opt.classList.add('active');
       currentType = opt.getAttribute('data-type');
       renderFloat();
@@ -274,20 +360,21 @@ h1 { font-size: 22px; margin-bottom: 6px; }
   });
 
   var countOpts = document.querySelectorAll('#countOpts .opt');
-  countOpts.forEach(function(opt) {
-    opt.onclick = function() {
-      countOpts.forEach(function(o) { o.classList.remove('active'); });
+  countOpts.forEach(function (opt) {
+    opt.onclick = function () {
+      countOpts.forEach(function (o) { o.classList.remove('active'); });
       opt.classList.add('active');
-      currentCount = parseInt(opt.getAttribute('data-count'));
+      currentCount = parseInt(opt.getAttribute('data-count'), 10);
       renderFloat();
     };
   });
 
-  darkSwitch.onclick = function() {
+  darkSwitch.onclick = function () {
     darkSwitch.classList.toggle('on');
     document.body.classList.toggle('dark');
   };
 
+  /* ── 音乐播放器 ── */
   var songs = [
     { name: '示例音乐 1', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
     { name: '示例音乐 2', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
@@ -297,11 +384,11 @@ h1 { font-size: 22px; margin-bottom: 6px; }
   var songList = document.getElementById('songList');
   var nowPlaying = document.getElementById('nowPlaying');
 
-  songs.forEach(function(song, i) {
+  songs.forEach(function (song, i) {
     var btn = document.createElement('button');
     btn.className = 'song-btn';
     btn.textContent = '▶ ' + song.name;
-    btn.onclick = function() { playSong(i); };
+    btn.onclick = function () { playSong(i); };
     songList.appendChild(btn);
   });
 
@@ -310,11 +397,12 @@ h1 { font-size: 22px; margin-bottom: 6px; }
     audio.src = song.src;
     audio.play();
     nowPlaying.textContent = '正在播放：' + song.name;
-    document.querySelectorAll('.song-btn').forEach(function(b, i) {
+    document.querySelectorAll('.song-btn').forEach(function (b, i) {
       b.classList.toggle('playing', i === index);
       b.textContent = (i === index ? '🎵 ' : '▶ ') + songs[i].name;
     });
   }
+})();
 </script>
 
 </body>
