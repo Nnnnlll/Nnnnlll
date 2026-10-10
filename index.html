@@ -55,47 +55,69 @@
   @keyframes drift3 { to { transform: translate3d(12vw, -14vh, 0) scale(1.2); } }
   @keyframes drift4 { to { transform: translate3d(-10vw, -10vh, 0) scale(1.05); } }
 
-  /* ── 漂浮物层 ── */
-  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
-  .float { position: absolute; }
+  /* ── 漂浮物层：放在最上层（不吃点击），质感改成轻、薄、透 ── */
+  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; }
+  .float { position: absolute; will-change: transform, opacity; }
+  /* 泡泡：像真肥皂泡，几乎全透，只有一圈薄亮边 + 一点高光 */
   .bubble {
     border-radius: 50%;
-    background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0%, rgba(210,235,255,.55) 30%, rgba(150,200,255,.25) 65%, rgba(120,170,255,.08) 100%);
-    box-shadow: inset -3px -4px 8px rgba(255,255,255,.7), inset 3px 4px 10px rgba(90,140,220,.25), 0 0 8px rgba(180,215,255,.4);
+    background:
+      radial-gradient(circle at 30% 26%, rgba(255,255,255,.9) 0%, rgba(255,255,255,.3) 11%, rgba(255,255,255,0) 32%),
+      radial-gradient(circle at 72% 80%, rgba(255,255,255,.32) 0%, rgba(255,255,255,0) 40%),
+      radial-gradient(circle, rgba(255,255,255,0) 60%, rgba(214,236,255,.3) 84%, rgba(255,255,255,.62) 97%, rgba(255,255,255,.12) 100%);
     animation: floatUp linear infinite;
   }
+  /* 落叶：温和秋色，不描边，靠一点点柔和投影 */
   .leaf {
-    background: radial-gradient(circle at 30% 30%, #ffcf7a, #e08a2e 60%, #a85a12);
-    border-radius: 0 70% 0 70%;
-    box-shadow: 0 0 4px rgba(180,120,40,.5);
+    background: linear-gradient(135deg, rgba(233,186,108,.9), rgba(196,132,58,.85) 55%, rgba(150,92,34,.8));
+    border-radius: 0 100% 0 100%;
+    box-shadow: 0 1px 3px rgba(120,80,30,.15);
     animation: fallSpin linear infinite;
   }
+  /* 雨丝：细、淡，末端收细 */
   .rain {
-    width: 2px; background: linear-gradient(to bottom, rgba(180,215,255,.1), rgba(120,180,255,.85));
-    border-radius: 2px; box-shadow: 0 0 4px rgba(140,190,255,.6);
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(175,205,245,0) 0%, rgba(175,205,245,.35) 40%, rgba(150,190,240,.6) 100%);
+    border-radius: 999px;
     animation: rainFall linear infinite;
   }
+  /* 雪：毛茸茸的小白点，低对比 */
   .snow {
-    background: radial-gradient(circle, #fff 0%, #e8f4ff 60%, rgba(230,245,255,.2) 100%);
+    background: radial-gradient(circle, rgba(255,255,255,.95) 0%, rgba(255,255,255,.5) 45%, rgba(255,255,255,0) 72%);
     border-radius: 50%;
-    box-shadow: 0 0 6px rgba(255,255,255,.9), 0 0 12px rgba(200,230,255,.6);
+    filter: blur(.35px);
     animation: fallSpin linear infinite;
   }
+  /* 星星：暖白微光，不用大金星 */
   .star {
-    background: radial-gradient(circle, #fff7c2 0%, #ffd84a 55%, rgba(255,200,60,.1) 100%);
-    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
-    box-shadow: 0 0 8px rgba(255,220,90,.9);
+    background: radial-gradient(circle, #fffdf2 0%, rgba(255,240,182,.8) 32%, rgba(255,214,120,0) 70%);
+    border-radius: 50%;
     animation: fallSpin linear infinite;
   }
+  /* 心：柔和粉红，带一点边缘光 */
   .heart {
-    background: radial-gradient(circle at 35% 35%, #ff9bb0, #ff4d6d 60%, #c81e3f);
+    background: radial-gradient(circle at 35% 32%, rgba(255,214,224,.98), rgba(255,120,150,.9) 55%, rgba(226,74,110,.85));
     clip-path: path('M7 13 C-2 6 0 0 4 0 C6 0 7 2 7 2 C7 2 8 0 10 0 C14 0 16 6 7 13 Z');
-    box-shadow: 0 0 6px rgba(255,90,120,.7);
+    box-shadow: 0 1px 4px rgba(210,70,110,.2);
     animation: fallSpin linear infinite;
   }
-  @keyframes floatUp { 0% { transform: translateY(0) scale(1) rotate(0); opacity: .7; } 100% { transform: translateY(-115vh) scale(1.15) rotate(20deg); opacity: 0; } }
-  @keyframes fallSpin { 0% { transform: translateY(-12vh) rotate(0); opacity: .95; } 100% { transform: translateY(112vh) rotate(360deg); opacity: 0; } }
-  @keyframes rainFall { 0% { transform: translateY(-12vh); opacity: .85; } 100% { transform: translateY(112vh); opacity: 0; } }
+  @keyframes floatUp {
+    0% { transform: translate3d(0,0,0) scale(.92); opacity: 0; }
+    14% { opacity: .75; }
+    85% { opacity: .55; }
+    100% { transform: translate3d(2vw,-115vh,0) scale(1.06); opacity: 0; }
+  }
+  @keyframes fallSpin {
+    0% { transform: translate3d(0,-12vh,0) rotate(0); opacity: 0; }
+    12% { opacity: .85; }
+    82% { opacity: .5; }
+    100% { transform: translate3d(-3vw,112vh,0) rotate(300deg); opacity: 0; }
+  }
+  @keyframes rainFall {
+    0% { transform: translate3d(0,-12vh,0); opacity: 0; }
+    10% { opacity: .7; }
+    100% { transform: translate3d(-1vw,112vh,0); opacity: 0; }
+  }
 
   /* ── 液态玻璃基类（hyalite 注入真实折射） ── */
   .glass {
@@ -222,7 +244,8 @@
   .hint { font-size: 11px; color: var(--ink-soft); opacity: .8; margin-top: 10px; line-height: 1.5; }
   #fpsText { font-size: 11px; color: var(--ink-soft); opacity: .7; margin-top: 16px; text-align: center; }
   /* ── 音乐播放器 ── */
-  .player { margin-top: 26px; padding: 20px; border-radius: 26px; }
+  /* 音乐播放器：宽度缩 30%，居中 */
+  .player { margin: 26px auto 0; width: 70%; padding: 20px; border-radius: 26px; }
   .player .title { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
   .m-search { display: flex; gap: 8px; }
   .m-search input {
@@ -273,15 +296,6 @@
   .m-vol input { flex: 1; min-width: 0; }
   #mAudio { display: none; }
 
-
-  footer {
-    margin: 44px auto 0; width: fit-content; text-align: center;
-    font-size: 12px; color: var(--ink-soft); letter-spacing: .2px;
-    padding: 12px 18px; border-radius: 40px;
-    background: rgba(248,250,255,.7); border: .5px solid rgba(255,255,255,.7);
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-  }
-  body.dark footer { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
 
   /* ── 暗色 ── */
   body.dark {
@@ -387,7 +401,6 @@
     <div class="hero-row">
       <div>
         <h1>大大小小</h1>
-        <div class="sub">收录好用的小工具</div>
       </div>
       <div class="hero-time">
         <div class="live-time" id="liveTime">00:00:00</div>
@@ -401,7 +414,7 @@
 
     <a class="card glass lite" href="tools/reaction.html">
       <div class="icon">⚡</div>
-      <div class="name">反应力</div>
+      <div class="name">反应力/手速</div>
       <div class="desc">反应速度 · 连点手速</div>
     </a>
 
@@ -482,8 +495,6 @@
     <input id="mFile" type="file" accept="audio/*" hidden>
     <audio id="mAudio" preload="none"></audio>
   </section>
-
-  <footer>作者：林紫涵，+10086</footer>
 </div>
 
 <!-- 游戏弹窗：先选游戏，再加载 -->

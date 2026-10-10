@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f8fafd">
-<title>反应力 / 手速测试</title>
+<title>反应力/手速</title>
 <link rel="stylesheet" href="tool.css">
 <style>
   #pad {
@@ -36,7 +36,7 @@
 <div class="wrap">
   <div class="top">
     <a class="back" href="../index.html">← 返回</a>
-    <div><h1>反应力 / 手速</h1><div class="sub">等它变绿再点，看你多少毫秒</div></div>
+    <div><h1>反应力/手速</h1><div class="sub">等它变绿再点，看你多少毫秒</div></div>
   </div>
 
   <div class="panel">
@@ -69,7 +69,8 @@
 (function () {
   var el = function (id) { return document.getElementById(id); };
   var pad = el('pad');
-  var mode = 'react', state = 'idle';          // idle | waiting | go | over
+  var mode = 'react', state = 'idle';          // idle | waiting | go
+  var groupActive = false;                     // 是否在跑同一组（修了「一直卡在还要 4 轮」）
   var results = [], tGo = 0, timer = null, cpsEnd = 0, cpsTimer = null, cpsHits = 0;
   var ROUNDS = 5, CPS_SEC = 10;
   var KEY = 'lzh.react.v1';
@@ -78,15 +79,6 @@
   function saveBest(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} }
 
   /* ── 反应力 ── */
-  function reactIdle() {
-    state = 'idle';
-    pad.className = '';
-    el('padMain').textContent = results.length >= ROUNDS ? '再来一组' : '点这里开始';
-    el('padSub').textContent = '变绿的一瞬间点下去';
-    el('vRound').textContent = results.length + '/' + ROUNDS;
-    if (results.length >= ROUNDS) el('padMain').textContent = '再来一组';
-  }
-
   function armRound() {
     state = 'waiting';
     pad.className = 'wait';
@@ -109,32 +101,39 @@
     state = 'idle';
     pad.className = '';
     el('vMain').textContent = ms + ' ms';
-    el('padMain').textContent = results.length >= ROUNDS ? '这组跑完了' : '还要 ' + (ROUNDS - results.length) + ' 轮';
-    el('padSub').textContent = '再点一下继续';
+    el('vRound').textContent = results.length + '/' + ROUNDS;
     drawList();
     if (results.length >= ROUNDS) {
-      state = 'over';
+      groupActive = false;
       var avg = Math.round(results.reduce(function (a, b) { return a + b; }, 0) / results.length);
-      var bst = Math.min.apply(null, results);
+      el('vAvg').textContent = avg + ' ms';
       el('padMain').textContent = '平均 ' + avg + ' ms';
       el('padSub').textContent = '想再来一组就直接点';
       var b = best();
-      el('vAvg').textContent = avg + ' ms';
       if (!b.reactAvg || avg < b.reactAvg) { b.reactAvg = avg; b.reactAt = Date.now(); saveBest(b); el('padSub').textContent = '🎉 破了自己的纪录'; }
-      state = 'idle';
-      results = [];
-      setTimeout(function () { el('padMain').textContent = '再来一组'; }, 1600);
+    } else {
+      el('padMain').textContent = '还要 ' + (ROUNDS - results.length) + ' 轮';
+      el('padSub').textContent = '点一下继续';
     }
   }
 
   function reactPad() {
-    if (state === 'idle') { results = []; armRound(); return; }
+    if (state === 'idle') {
+      if (!groupActive) {                 // 开新一组
+        results = []; groupActive = true;
+        el('list').innerHTML = '';
+        el('vAvg').textContent = '—'; el('vMain').textContent = '—';
+        el('vRound').textContent = '0/' + ROUNDS;
+      }
+      armRound();
+      return;
+    }
     if (state === 'waiting') {                 // 抢跑
       clearTimeout(timer);
       state = 'idle';
       pad.className = 'fail';
       el('padMain').textContent = '抢跑了！';
-      el('padSub').textContent = '等变绿再点，点一下重来';
+      el('padSub').textContent = '这一轮不算，点一下重来';
       el('vMain').textContent = '犯规';
     } else if (state === 'go') {
       reactHit();
@@ -191,7 +190,7 @@
 
   function applyMode() {
     clearTimeout(timer); clearInterval(cpsTimer);
-    results = []; state = 'idle'; cpsHits = 0;
+    results = []; state = 'idle'; cpsHits = 0; groupActive = false;
     pad.className = ''; pad.style.transform = '';
     el('list').innerHTML = '';
     el('vMain').textContent = '—'; el('vAvg').textContent = '—'; el('vBest').textContent = '—';
