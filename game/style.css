@@ -1,0 +1,1022 @@
+/* ============================================================
+   奶蛙2048 · 样式表
+   配色跟着玩法走：池塘绿 + 奶油白，重心方向一眼可见。
+   ============================================================ */
+
+:root {
+  --ink:        #23443a;
+  --ink-soft:   #6d8a80;
+  --brand:      #2fa87d;
+  --brand-dark: #1c7e5c;
+  --gold:       #e39b1f;
+  --card:       rgba(255, 255, 255, .76);
+  --shadow:     0 18px 50px rgba(30, 90, 70, .18);
+
+  /* 手机浏览器地址栏会吃掉 vh，dvh 更准；不支持的浏览器自动退回 vh */
+  --vh:         100vh;
+  --safe-t:     env(safe-area-inset-top, 0px);
+  --safe-b:     env(safe-area-inset-bottom, 0px);
+  --safe-l:     env(safe-area-inset-left, 0px);
+  --safe-r:     env(safe-area-inset-right, 0px);
+}
+
+@supports (height: 100dvh) {
+  :root { --vh: 100dvh; }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  overscroll-behavior: none;      /* 禁掉下拉刷新 / 橡皮筋 */
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+  color: var(--ink);
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+               system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background:
+    radial-gradient(1200px 700px at 6% -12%,  #d8f7e4 0%, transparent 60%),
+    radial-gradient(900px 620px at 104% -8%,  #cdeaff 0%, transparent 55%),
+    radial-gradient(1000px 780px at 50% 118%, #fdf3d5 0%, transparent 62%),
+    #f2fbf6;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  touch-action: manipulation;     /* 干掉双击缩放 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---------------- 布局 ---------------- */
+
+.app {
+  display: flex;
+  align-items: center;         /* 棋盘那一列和侧栏居中对齐 */
+  justify-content: center;
+  gap: 18px;
+  max-height: 100%;
+}
+
+/* 棋盘 + 棋盘下方状态条 */
+.left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;         /* 别把正方形的棋盘横向拉长 */
+  gap: 12px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.board-pad,
+.board-foot { align-self: stretch; }
+
+/* ---------------- 游戏区 ---------------- */
+
+.stage {
+  position: relative;
+  height: min(calc(var(--vh) - 262px), 600px);
+  aspect-ratio: 1 / 1;            /* 正方形棋盘：往哪边甩都一样宽 */
+  flex: 0 0 auto;
+  border-radius: 24px;
+  background: #ddf3e7;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;             /* 滑动手势全归游戏 */
+  box-shadow:
+    0 26px 64px rgba(24, 82, 62, .28),
+    0 0 0 1px rgba(255, 255, 255, .7) inset,
+    0 0 0 6px rgba(255, 255, 255, .55);
+}
+
+.stage:active { cursor: grabbing; }
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------------- 棋盘下方的状态条 ---------------- */
+
+.board-foot {
+  width: 100%;
+  padding: 11px 14px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+}
+
+.foot-row { display: flex; gap: 8px; }
+
+.foot-item {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 7px 11px;
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--ink-soft);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .85);
+  box-shadow: 0 3px 10px rgba(24, 82, 62, .10);
+}
+
+.foot-item b {
+  display: block;
+  margin-top: 3px;
+  font-size: 15px;
+  letter-spacing: 0;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.foot-item b.waiting { color: var(--brand); }
+
+.foot-tips {
+  margin: 9px 2px 0;
+  font-size: 11.5px;
+  line-height: 1.65;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.foot-tips b { color: var(--ink); }
+
+/* ---------------- 开局手势提示 ---------------- */
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 86%;
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  color: #1d6b52;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 8px 22px rgba(24, 82, 62, .18);
+  pointer-events: none;
+  animation: hintPulse 1.9s ease-in-out infinite;
+  transition: opacity .35s ease, transform .35s ease;
+}
+
+.hint.hide {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  animation: none;
+}
+
+.hint-ico { flex: 0 0 auto; font-size: 16px; }
+
+.hint-txt { min-width: 0; }
+
+@keyframes hintPulse {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-5px); }
+}
+
+/* ---------------- 结算遮罩（最顶层，不在棋盘容器里） ---------------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(18, 62, 48, .5);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease;
+}
+
+.overlay.show { opacity: 1; pointer-events: auto; }
+
+.dialog {
+  width: min(392px, 100%);
+  padding: 26px 22px;
+  border-radius: 22px;
+  text-align: center;
+  background: rgba(252, 255, 253, .97);
+  box-shadow: 0 20px 46px rgba(12, 48, 36, .34);
+  transform: translateY(14px) scale(.96);
+  transition: transform .32s cubic-bezier(.2, .9, .3, 1.4);
+  max-height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.overlay.show .dialog { transform: none; }
+
+.dialog-emoji { font-size: 46px; line-height: 1; margin-bottom: 6px; }
+
+.dialog h2 { margin: 0 0 12px; font-size: 24px; letter-spacing: .06em; }
+
+.dialog-score { margin: 0 0 4px; font-size: 15px; color: var(--ink-soft); }
+
+.dialog-score strong {
+  font-size: 30px;
+  color: var(--brand);
+  font-variant-numeric: tabular-nums;
+}
+
+.dialog-best { margin: 0 0 18px; font-size: 13px; color: var(--ink-soft); }
+
+.dialog-hint { margin: 12px 0 0; font-size: 12px; color: var(--ink-soft); }
+
+.dialog-actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
+
+/* ---------------- 侧边面板 ---------------- */
+
+.panel {
+  width: min(320px, 86vw);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, .8);
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+}
+
+/* 窗口不够高时面板内部自己滚，绝不让内容被 body 的 overflow:hidden 切掉 */
+@media (min-width: 861px) {
+  .panel {
+    max-height: calc(var(--vh) - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+.panel-head h1 {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: .04em;
+  background: linear-gradient(100deg, #4cc78d, #1f9f8c 55%, #2f7fd6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.subtitle { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.stat {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .84);
+  box-shadow: 0 4px 14px rgba(24, 82, 62, .10);
+}
+
+.stat-label { display: block; font-size: 11px; letter-spacing: .12em; color: var(--ink-soft); }
+
+.stat-value {
+  display: block;
+  margin-top: 2px;
+  font-size: 26px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-best { color: var(--gold); }
+
+.stat-value.bump { animation: bump .32s ease; }
+
+@keyframes bump {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.22); color: var(--brand); }
+  100% { transform: scale(1); }
+}
+
+.box-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--ink-soft);
+}
+
+/* 重力方向 */
+
+.grav-box,
+.jam-box,
+.next-box,
+.chain-box {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .84);
+  box-shadow: 0 4px 14px rgba(24, 82, 62, .10);
+}
+
+.grav-row { display: flex; gap: 8px; }
+
+/* ---------------- 棋盘正下方的方向键 ---------------- */
+
+.board-pad {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 384px;        /* 桌面端别铺满整块棋盘，居中排一条 */
+  margin: 0 auto;
+  flex: 0 0 auto;
+}
+
+.board-pad .grav-chip {
+  flex: 1 1 0;
+  height: 44px;
+  font-size: 21px;
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, .9);
+  box-shadow: 0 5px 14px rgba(24, 82, 62, .16);
+}
+
+.grav-chip {
+  flex: 1 1 0;
+  padding: 6px 0;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  color: #9db6ae;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(233, 246, 240, .9);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .16s ease, color .16s ease, background .16s ease, opacity .2s ease;
+}
+
+.grav-chip:hover { color: #6f9c8d; }
+
+.grav-chip.on {
+  color: #fff;
+  background: linear-gradient(135deg, #4ecb95, var(--brand-dark));
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 6px 14px rgba(31, 140, 104, .32);
+}
+
+/* 上一轮还没走完：方向键变淡，点了会提示“等奶蛙停下” */
+.grav-chip.wait {
+  opacity: .5;
+  cursor: default;
+  transform: none;
+}
+
+.grav-status { margin: 8px 0 0; font-size: 11.5px; color: var(--ink-soft); }
+
+/* 拥挤度 */
+
+.jam-box .box-label b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.jam-bar {
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(31, 140, 104, .14);
+}
+
+.jam-bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7fe0b0, #2fa87d);
+  transition: width .18s linear, background .2s ease;
+}
+
+.jam-bar i.hot {
+  background: linear-gradient(90deg, #ffb26b, #ff5252);
+  animation: hotBlink .5s ease-in-out infinite alternate;
+}
+
+@keyframes hotBlink {
+  from { filter: brightness(1); }
+  to   { filter: brightness(1.35); }
+}
+
+/* 下一个 / 合成表 */
+
+#next { display: block; width: 100%; height: auto; margin: 2px auto 0; }
+
+.next-tip {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink-soft);
+  transition: color .2s ease;
+}
+
+.next-tip.waiting { color: var(--brand); font-weight: 700; }
+
+#chain { display: block; width: 100%; height: auto; }
+
+/* 2048 奖章 */
+
+.medal {
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: #7a4d00;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #fff3cf, #ffe08a);
+  box-shadow: 0 6px 16px rgba(214, 156, 30, .28);
+}
+
+.medal[hidden] { display: none; }
+
+/* 按钮 */
+
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.btn {
+  padding: 11px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, .9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 6px 16px rgba(24, 82, 62, .14);
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease, background .2s ease;
+}
+
+.btn .ico { margin-right: 4px; }
+
+.btn:hover  { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(24, 82, 62, .2); }
+.btn:active { transform: translateY(1px) scale(.985); }
+
+.btn-wide { grid-column: 1 / -1; }
+
+.btn-primary {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #55d09c, var(--brand) 55%, var(--brand-dark));
+}
+
+/* ---------------- 结算区 & 排行榜弹窗 ---------------- */
+
+.submit-box {
+  margin: 0 0 14px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(233, 249, 241, .9);
+  box-shadow: inset 0 0 0 1px rgba(47, 168, 125, .22);
+}
+
+.submit-box .btn { width: 100%; }
+
+.submit-msg {
+  margin: 0;
+  min-height: 17px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.submit-msg.is-good { color: #1f9d55; font-weight: 600; }
+.submit-msg.is-bad  { color: #d63b3b; font-weight: 600; }
+
+.my-name {
+  margin: 7px 0 0;
+  font-size: 12px;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.my-name strong { color: var(--ink); }
+
+.link-btn {
+  margin-left: 4px;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--brand);
+  text-decoration: underline;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+#submitBtn { margin-top: 9px; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;              /* 盖在结算遮罩（20）上面 */
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(18, 62, 48, .5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease;
+}
+
+.modal.show { opacity: 1; pointer-events: auto; }
+
+.modal-card {
+  display: flex;
+  flex-direction: column;
+  width: min(380px, 100%);
+  max-height: min(560px, calc(var(--vh) - 40px));
+  padding: 16px;
+  border-radius: 22px;
+  background: rgba(252, 255, 253, .98);
+  box-shadow: 0 24px 60px rgba(12, 48, 36, .35);
+  transform: translateY(12px) scale(.97);
+  transition: transform .26s cubic-bezier(.2, .9, .3, 1.3);
+}
+
+.modal.show .modal-card { transform: none; }
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.modal-head h2 { margin: 0; font-size: 19px; letter-spacing: .04em; }
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink-soft);
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, .05);
+  cursor: pointer;
+}
+
+.icon-btn:hover { background: rgba(0, 0, 0, .1); }
+
+.nick-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(233, 249, 241, .95);
+  box-shadow: inset 0 0 0 1px rgba(47, 168, 125, .22);
+}
+
+.nick-label { flex: 0 0 auto; font-size: 12.5px; color: var(--ink-soft); }
+
+.nick-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 15px;   /* ≥16px 才不会被 iOS 自动放大，配合 viewport 也够用 */
+  color: var(--ink);
+  text-align: center;
+  border: 1px solid rgba(47, 168, 125, .35);
+  border-radius: 10px;
+  background: #fff;
+  outline: none;
+}
+
+.nick-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(47, 168, 125, .18);
+}
+
+.board-list {
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px;
+}
+
+.board-empty {
+  margin: 28px 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.board-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  margin-bottom: 6px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 2px 6px rgba(24, 82, 62, .09);
+}
+
+.board-rank {
+  flex: 0 0 30px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.board-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-score {
+  flex: 0 0 auto;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand);
+}
+
+.board-row.r1 { background: linear-gradient(100deg, #fff8dc, #ffeaa7); }
+.board-row.r2 { background: linear-gradient(100deg, #f6f8fa, #e6eaef); }
+.board-row.r3 { background: linear-gradient(100deg, #fdf1e5, #f5ddc6); }
+.board-row.r1 .board-rank,
+.board-row.r2 .board-rank,
+.board-row.r3 .board-rank { font-size: 18px; }
+
+.board-row.is-mine {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
+}
+
+.modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.board-note { font-size: 11px; color: var(--ink-soft); }
+
+.modal-foot .btn { flex: 0 0 auto; padding: 8px 16px; }
+
+/* ---------------- 打赏作者（从「合成大奶娃」搬过来的） ---------------- */
+
+.sponsor-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  text-align: center;
+}
+
+.sponsor-note {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.sponsor-qr {
+  display: block;
+  width: min(258px, 70vw);
+  height: auto;
+  margin: 0 auto;
+  padding: 6px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 20px rgba(24, 82, 62, .18);
+}
+
+.sponsor-hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* 结算弹窗里的「赏作者一包辣条」：要一眼看到，但别跟主按钮抢
+   —— 用琥珀金（跟绿色主按钮区分开），加一道缓慢扫过的光，再叠一点亮度呼吸。
+   注意选择器写成 .btn.btn-sponsor：这段排在 .btn 之前，
+   单靠 .btn-sponsor 会被后面的 .btn 同权重覆盖掉。 */
+.btn.btn-sponsor {
+  position: relative;
+  overflow: hidden;
+  margin-top: 10px;
+  color: #5a3200;
+  font-weight: 800;
+  letter-spacing: .01em;
+  border-color: transparent;
+  background: linear-gradient(135deg, #ffd97a, #ffb020 52%, #f78f00);
+  box-shadow: 0 8px 22px rgba(244, 150, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .5);
+  animation: sponsorPulse 2.6s ease-in-out infinite;
+}
+
+.btn.btn-sponsor:hover {
+  transform: translateY(-2px) scale(1.012);
+  box-shadow: 0 12px 30px rgba(244, 150, 0, .52), inset 0 1px 0 rgba(255, 255, 255, .55);
+}
+.btn.btn-sponsor:active { transform: translateY(1px) scale(.99); }
+
+/* 一道光周期性地扫过去，提示「这里可以点」 */
+.btn-sponsor::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  width: 42%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .78), transparent);
+  transform: translateX(-150%) skewX(-20deg);
+  animation: sponsorSheen 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes sponsorPulse {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%      { filter: brightness(1.09) saturate(1.12); }
+}
+
+@keyframes sponsorSheen {
+  0%, 55%   { transform: translateX(-150%) skewX(-20deg); }
+  82%, 100% { transform: translateX(330%) skewX(-20deg); }
+}
+
+/* ---------------- 参数提示 ---------------- */
+
+.tips {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.7;
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+/* ============================================================
+   响应式：手机 / 竖屏窄屏
+   面板拆成「顶部信息条」——第一行分数 + 按钮，第二行四个方向键
+   （省得手机浏览器把滑动吃成快捷手势），下面是正方形棋盘。
+   ============================================================ */
+
+@media (max-width: 860px) {
+  :root { --chrome: 258px; }   /* 顶栏 + 方向键 + 状态栏 + 间隙的大致占高 */
+
+  body {
+    padding: calc(8px + var(--safe-t)) calc(8px + var(--safe-r))
+             calc(8px + var(--safe-b)) calc(8px + var(--safe-l));
+  }
+
+  .app {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+  }
+
+  .panel { order: -1; }
+
+  /* 棋盘 + 方向键 + 状态条整体占满剩下的高度，并居中 */
+  .left {
+    width: 100%;
+    max-width: 96vw;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  /* 正方形棋盘：宽度最多 96vw，高度不超过剩下的空间 */
+  .stage {
+    margin: 0;
+    height: min(calc(var(--vh) - var(--chrome) - var(--safe-t) - var(--safe-b)), 96vw);
+    width: auto;
+    max-height: none;
+    border-radius: 20px;
+  }
+
+  /* 方向键：手机上是棋盘下面整排大按钮 */
+  .board-pad { max-width: none; }
+  .board-pad .grav-chip { height: 54px; font-size: 24px; }
+
+  .board-foot { width: 100%; padding: 9px 11px 7px; border-radius: 18px; }
+
+  .foot-item { padding: 6px 9px; font-size: 10px; }
+  .foot-item b { font-size: 14px; }
+  .foot-tips { font-size: 11px; margin-top: 7px; }
+
+  /* ---- 顶部信息条（一行：分数 + 按钮） ---- */
+  .panel {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    max-width: 96vw;
+    padding: 8px 10px;
+    border-radius: 18px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .panel-head,
+  .grav-box,
+  .jam-box,
+  .next-box,
+  .chain-box,
+  .medal,
+  .tips { display: none; }
+
+  .stats {
+    flex: 1 1 auto;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .stat {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 6px 10px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .9);
+    box-shadow: 0 2px 8px rgba(24, 82, 62, .12);
+  }
+
+  .stat-label { font-size: 10px; letter-spacing: .08em; }
+
+  .stat-value { margin-top: 0; font-size: 20px; line-height: 1.15; }
+
+  .actions { flex: 0 0 auto; display: flex; gap: 6px; }
+
+  .btn {
+    min-height: 46px;
+    padding: 0 12px;
+    font-size: 14px;
+    border-radius: 13px;
+    white-space: nowrap;
+  }
+
+  #soundBtn .lbl { display: none; }
+
+  #soundBtn {
+    min-width: 46px;
+    padding: 0 10px;
+    font-size: 17px;
+  }
+
+  #soundBtn .ico { margin-right: 0; }
+
+  /* ---- 提示 & 结束弹窗 ---- */
+  .hint { bottom: 18px; padding: 8px 13px; font-size: 12px; }
+
+  .overlay { padding: 14px; }
+
+  .dialog {
+    padding: 20px 16px;
+    border-radius: 20px;
+    max-height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dialog-emoji { font-size: 34px; }
+  .dialog h2 { font-size: 21px; margin-bottom: 8px; }
+  .dialog-score strong { font-size: 26px; }
+  .dialog .btn { width: 100%; min-height: 48px; }
+  .dialog-hint { font-size: 11px; }
+}
+
+/* 手机竖屏：方向键在棋盘下方整排铺开（已经在上面的媒体查询里设好，这里只补触感） */
+@media (max-width: 860px) and (orientation: portrait) {
+  .grav-box .box-label,
+  .grav-status { display: none; }
+}
+
+/* 手机横屏 / 矮屏：回到左右布局，棋盘吃满高度 */
+@media (max-width: 860px) and (orientation: landscape) {
+  .app {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .panel {
+    order: 0;
+    flex-direction: column;
+    width: min(200px, 28vw);
+    max-width: none;
+    padding: 10px;
+  }
+
+  /* 横屏时棋盘那一列同样居中，状态条贴在棋盘下面 */
+  .left {
+    width: auto;
+    max-width: none;
+    flex: 0 0 auto;
+    align-items: stretch;
+    justify-content: center;
+  }
+
+  .stats { flex-direction: column; flex: 0 0 auto; }
+  .actions { flex-direction: column; }
+
+  .stage {
+    height: min(calc(var(--vh) - 152px - var(--safe-t) - var(--safe-b)),
+                calc(100vw - 240px - var(--safe-l) - var(--safe-r)));
+    width: auto;
+  }
+
+  /* 横屏也把状态条压扁，别把棋盘挤小 */
+  .board-pad .grav-chip { height: 40px; font-size: 19px; }
+  .board-foot { padding: 6px 9px; border-radius: 16px; }
+  .foot-tips { display: none; }
+  .foot-item { padding: 4px 8px; font-size: 9.5px; }
+  .foot-item b { margin-top: 1px; font-size: 13px; }
+
+  .stat-value { font-size: 18px; }
+
+  #soundBtn { min-width: 0; padding: 0 10px; font-size: 13px; }
+  #soundBtn .lbl { display: inline; }
+  #soundBtn .ico { margin-right: 4px; }
+}
+
+/* 小屏手机（iPhone SE 等 375 以下）：再压一档 */
+@media (max-width: 380px) {
+  .panel { padding: 6px 8px; gap: 6px; }
+  .stats { gap: 6px; }
+  .stat { padding: 5px 8px; }
+  .stat-value { font-size: 17px; }
+  .stat-label { font-size: 9px; }
+  .btn { min-height: 44px; padding: 0 10px; font-size: 13px; }
+  #soundBtn { min-width: 42px; font-size: 16px; }
+}
+
+/* 很矮的横屏：进一步压缩 */
+@media (max-width: 860px) and (orientation: landscape) and (max-height: 430px) {
+  .stat-label { display: none; }
+  .stat { padding: 4px 8px; }
+  .stat-value { font-size: 16px; }
+  .btn { min-height: 40px; padding: 0 10px; font-size: 13px; }
+}
+
+/* 矮屏手机（竖屏、高度不够）：状态条压成一条紧凑信息、方向键矮一点，
+   把空间留给正方形棋盘 */
+@media (max-width: 860px) and (orientation: portrait) and (max-height: 780px) {
+  :root { --chrome: 214px; }
+
+  .board-pad .grav-chip { height: 46px; font-size: 21px; }
+
+  .board-foot { padding: 6px 9px; border-radius: 16px; }
+
+  .foot-item { padding: 4px 8px; font-size: 9.5px; letter-spacing: .06em; }
+  .foot-item b { margin-top: 1px; font-size: 13px; }
+
+  .foot-tips { display: none; }
+}
+
+/* 桌面端矮窗口：状态条压扁、方向键矮一点，保证棋盘还是正方形且放得下 */
+@media (min-width: 861px) and (max-height: 700px) {
+  .chain-box { display: none; }
+
+  .board-pad .grav-chip { height: 38px; font-size: 18px; }
+
+  .board-foot { padding: 7px 11px; border-radius: 16px; }
+  .foot-item { padding: 4px 8px; font-size: 9.5px; letter-spacing: .06em; }
+  .foot-item b { margin-top: 1px; font-size: 13px; }
+  .foot-tips { display: none; }
+
+  .stage { height: min(calc(var(--vh) - 190px), 600px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hint, .jam-bar i.hot { animation: none; }
+  .btn.btn-sponsor, .btn-sponsor::after { animation: none; }
+}
