@@ -8,65 +8,89 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    background: #f5f6f8;
-    color: #222;
-    padding: 20px;
+    background: linear-gradient(135deg, #eef1f7 0%, #e3e9f5 100%);
+    color: #222; padding: 20px; min-height: 100vh;
+    position: relative; overflow-x: hidden;
   }
+  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .bubble { position: absolute; border-radius: 50%; background: rgba(120,170,255,0.25); animation: floatUp linear infinite; }
+  .leaf { position: absolute; font-size: 20px; animation: fallDown linear infinite; }
+  .rain { position: absolute; width: 2px; height: 14px; background: rgba(120,170,255,0.5); animation: rainFall linear infinite; }
+  @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: .6; } 100% { transform: translateY(-110vh) scale(1.2); opacity: 0; } }
+  @keyframes fallDown { 0% { transform: translateY(-10vh) rotate(0deg); opacity: .9; } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0; } }
+  @keyframes rainFall { 0% { transform: translateY(-10vh); opacity: .8; } 100% { transform: translateY(110vh); opacity: 0; } }
+  .wrap { position: relative; z-index: 2; }
   h1 { font-size: 22px; margin-bottom: 6px; }
   .sub { color: #888; font-size: 13px; margin-bottom: 20px; }
-  .section-title {
-    font-size: 15px; font-weight: 600;
-    margin: 22px 0 12px; color: #444;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 12px;
-  }
+  .section-title { font-size: 15px; font-weight: 600; margin: 22px 0 12px; color: #444; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 14px; }
   .card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 16px;
-    text-decoration: none;
-    color: inherit;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    transition: transform .15s, box-shadow .15s;
-    display: block;
-    cursor: pointer;
+    background: linear-gradient(145deg,#fff,#f0f3f9);
+    border-radius: 14px; padding: 16px; text-decoration: none; color: inherit;
+    box-shadow: 6px 6px 14px rgba(0,0,0,0.12), -6px -6px 14px rgba(255,255,255,0.9);
+    transition: transform .15s, box-shadow .15s; display: block; cursor: pointer;
   }
-  .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-  .card .icon { font-size: 24px; margin-bottom: 8px; }
-  .card .name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-  .card .desc { font-size: 12px; color: #999; line-height: 1.4; }
+  .card:hover { transform: translateY(-3px); box-shadow: 10px 10px 20px rgba(0,0,0,0.16), -8px -8px 18px rgba(255,255,255,0.95); }
+  .card:active { transform: translateY(1px) scale(0.98); box-shadow: inset 4px 4px 10px rgba(0,0,0,0.12), inset -4px -4px 10px rgba(255,255,255,0.9); }
+  .card .icon { font-size: 26px; margin-bottom: 8px; }
+  .card .name { font-size: 15px; font-weight: 600; }
+  .card .desc { font-size: 12px; color: #999; line-height: 1.4; margin-top: 2px; }
+   #settingBtn { position: fixed; top: 16px; right: 16px; width: 42px; height: 42px; border-radius: 50%; border: none; background: #fff; font-size: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 30; }
+  #settingPanel { position: fixed; top: 0; right: -320px; width: 300px; max-width: 85vw; height: 100%; background: #fff; box-shadow: -6px 0 20px rgba(0,0,0,0.15); padding: 22px; transition: right .3s ease; z-index: 40; }
+  #settingPanel.open { right: 0; }
+  #settingPanel h2 { font-size: 17px; margin-bottom: 16px; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  .switch { position: relative; width: 44px; height: 24px; background: #ccc; border-radius: 12px; cursor: pointer; transition: background .2s; }
+  .switch.on { background: #4a90e2; }
+  .switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: left .2s; }
+  .switch.on::after { left: 22px; }
+  #closeSetting { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; cursor: pointer; color: #888; }
+  .player { margin-top: 26px; background: linear-gradient(145deg,#fff,#eef1f7); border-radius: 16px; padding: 16px; box-shadow: 6px 6px 14px rgba(0,0,0,0.1), -6px -6px 14px rgba(255,255,255,0.9); }
+  .player .title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .song-list { display: flex; flex-direction: column; gap: 8px; }
+  .song-btn { text-align: left; padding: 10px 12px; border: none; border-radius: 10px; background: #eef1f7; font-size: 13px; cursor: pointer; color: #333; transition: background .15s; }
+  .song-btn:hover { background: #e2e8f4; }
+  .song-btn.playing { background: #4a90e2; color: #fff; }
+  .now-playing { margin-top: 12px; font-size: 13px; color: #666; min-height: 18px; }
+  audio { width: 100%; margin-top: 10px; }
+  footer { margin-top: 34px; text-align: center; font-size: 12px; color: #aaa; }
 </style>
 </head>
 <body>
 
+<div id="floatLayer"></div>
+<button id="settingBtn">⚙️</button>
+
+<div id="settingPanel">
+  <button id="closeSetting">✕</button>
+  <h2>设置</h2>
+  <div class="setting-row">
+    <span>漂浮效果</span>
+    <div class="switch on" id="floatSwitch"></div>
+  </div>
+  <div style="margin-top:16px; font-size:12px; color:#aaa;">更多功能即将上线</div>
+</div>
+
+<div class="wrap">
   <h1>大大小小</h1>
   <div class="sub">收录好用的小工具</div>
 
-  <div class="section-title">免费工具</div>
+  <div class="section-title">滴滴滴</div>
   <div class="grid">
 
     <a class="card" href="https://www.douyin.com" target="_blank">
       <div class="icon">🎵</div>
       <div class="name">抖音</div>
-      <div class="desc">抖音网页版</div>
     </a>
 
     <a class="card" href="https://www.kuaishou.com" target="_blank">
       <div class="icon">🎬</div>
       <div class="name">快手</div>
-      <div class="desc">快手网页版</div>
     </a>
 
     <a class="card" href="#" onclick="alert('小游戏即将上线，敬请期待'); return false;">
       <div class="icon">🎮</div>
-      <div class="name">小游戏</div>
-      <div class="desc">好玩的在线小游戏</div>
+      <div class="name">Game</div>
     </a>
 
     <a class="card" href="#" onclick="alert('等待更新'); return false;">
@@ -76,6 +100,98 @@
     </a>
 
   </div>
+
+  <div class="player">
+    <div class="title">🎧 音乐播放器</div>
+    <div class="song-list" id="songList"></div>
+    <div class="now-playing" id="nowPlaying">选择一首歌开始播放</div>
+    <audio id="audio" controls></audio>
+  </div>
+
+  <footer>作者：林紫涵，+10086</footer>
+</div>
+<script>
+  const floatLayer = document.getElementById('floatLayer');
+  let floatEnabled = true;
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+
+  function createFloatElements() {
+    floatLayer.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const b = document.createElement('div');
+      b.className = 'bubble';
+      const size = rand(14, 42);
+      b.style.width = size + 'px';
+      b.style.height = size + 'px';
+      b.style.left = rand(0, 100) + 'vw';
+      b.style.bottom = '-60px';
+      b.style.animationDuration = rand(8, 18) + 's';
+      b.style.animationDelay = rand(0, 8) + 's';
+      floatLayer.appendChild(b);
+    }
+    const leafEmojis = ['🍂', '🍁', '🌿'];
+    for (let i = 0; i < 6; i++) {
+      const l = document.createElement('div');
+      l.className = 'leaf';
+      l.textContent = leafEmojis[Math.floor(Math.random() * leafEmojis.length)];
+      l.style.left = rand(0, 100) + 'vw';
+      l.style.animationDuration = rand(9, 16) + 's';
+      l.style.animationDelay = rand(0, 10) + 's';
+      floatLayer.appendChild(l);
+    }
+    for (let i = 0; i < 25; i++) {
+      const r = document.createElement('div');
+      r.className = 'rain';
+      r.style.left = rand(0, 100) + 'vw';
+      r.style.animationDuration = rand(0.8, 1.8) + 's';
+      r.style.animationDelay = rand(0, 2) + 's';
+      floatLayer.appendChild(r);
+    }
+  }
+  createFloatElements();
+
+  const settingBtn = document.getElementById('settingBtn');
+  const settingPanel = document.getElementById('settingPanel');
+  const closeSetting = document.getElementById('closeSetting');
+  const floatSwitch = document.getElementById('floatSwitch');
+
+  settingBtn.onclick = () => settingPanel.classList.add('open');
+  closeSetting.onclick = () => settingPanel.classList.remove('open');
+  floatSwitch.onclick = () => {
+    floatEnabled = !floatEnabled;
+    floatSwitch.classList.toggle('on', floatEnabled);
+    floatLayer.style.display = floatEnabled ? 'block' : 'none';
+  };
+
+  const songs = [
+    { name: '示例音乐 1', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+    { name: '示例音乐 2', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+    { name: '示例音乐 3', src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
+  ];
+
+  const audio = document.getElementById('audio');
+  const songList = document.getElementById('songList');
+  const nowPlaying = document.getElementById('nowPlaying');
+
+  songs.forEach((song, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'song-btn';
+    btn.textContent = '▶ ' + song.name;
+    btn.onclick = () => playSong(i);
+    songList.appendChild(btn);
+  });
+
+  function playSong(index) {
+    const song = songs[index];
+    audio.src = song.src;
+    audio.play();
+    nowPlaying.textContent = '正在播放：' + song.name;
+    document.querySelectorAll('.song-btn').forEach((b, i) => {
+      b.classList.toggle('playing', i === index);
+      b.textContent = (i === index ? '🎵 ' : '▶ ') + songs[i].name;
+    });
+  }
+</script>
 
 </body>
 </html>
