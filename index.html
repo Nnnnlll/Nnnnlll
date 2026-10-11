@@ -56,8 +56,13 @@
   @keyframes drift4 { to { transform: translate3d(-10vw, -10vh, 0) scale(1.05); } }
 
   /* ── 漂浮物层：放在最上层（不吃点击），质感改成轻、薄、透 ── */
-  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; }
+  #floatLayer { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 30; contain: strict; }
+  #floatCanvas { width: 100%; height: 100%; display: block; }
   .float { position: absolute; will-change: transform, opacity; }
+  @media (prefers-reduced-motion: reduce) {
+    #floatLayer { display: none; }
+    .blob { animation: none !important; }
+  }
   /* 泡泡：像真肥皂泡，几乎全透，只有一圈薄亮边 + 一点高光 */
   .bubble {
     border-radius: 50%;
@@ -382,7 +387,7 @@
   <span class="blob b1"></span><span class="blob b2"></span>
   <span class="blob b3"></span><span class="blob b4"></span>
 </div>
-<div id="floatLayer"></div>
+<div id="floatLayer"><canvas id="floatCanvas" aria-hidden="true"></canvas></div>
 
 <div id="settingPanel" class="glass">
   <button id="closeSetting">✕</button>
@@ -581,7 +586,7 @@
   function wantRefract() {
     if (state.refract === 'on') return true;
     if (state.refract === 'off') return false;
-    return !isMobile && !lowFps;      // 自动：手机默认关
+    return !lowFps && (!isMobile || (navigator.hardwareConcurrency || 4) >= 6); // 高性能手机启用，低端保留 CSS 玻璃
   }
   function wantBg() { return state.bgMotion && !lowFps; }
 
@@ -621,44 +626,58 @@
   requestAnimationFrame(loop);
 
   /* ── 漂浮物 ── */
+  /* ── 单 Canvas 漂浮物：一个合成层、低频绘制、后台自动停 ── */
   var floatLayer = document.getElementById('floatLayer');
-  var currentType = 'bubble';
-  var currentCount = 14;
+  var floatCanvas = document.getElementById('floatCanvas');
+  var fx = floatCanvas.getContext('2d', { alpha: true });
+  var currentType = 'bubble', currentCount = 14, floatItems = [], floatRaf = 0, floatLast = 0;
+  var floatDpr = Math.min(window.devicePixelRatio || 1, 1.5);
   function rand(a, b) { return Math.random() * (b - a) + a; }
-
-  function renderFloat() {
-    floatLayer.innerHTML = '';
-    if (currentType === 'none') return;
-    var frag = document.createDocumentFragment();
-    for (var i = 0; i < currentCount; i++) {
-      var el = document.createElement('div');
-      el.className = 'float ' + currentType;
-      var size;
-      if (currentType === 'bubble') size = rand(12, 46);
-      else if (currentType === 'rain') size = rand(1.2, 2.4);
-      else if (currentType === 'star') size = rand(7, 16);
-      else if (currentType === 'heart') size = rand(9, 20);
-      else if (currentType === 'snow') size = rand(6, 15);
-      else size = rand(9, 20);
-
-      el.style.left = rand(0, 100) + 'vw';
-      if (currentType === 'bubble') {
-        el.style.width = size + 'px';
-        el.style.height = size + 'px';
-        el.style.bottom = '-60px';
-        el.style.animationDuration = rand(8, 18) + 's';
-        el.style.animationDelay = rand(0, 8) + 's';
-      } else {
-        el.style.width = size + 'px';
-        el.style.height = (currentType === 'rain' ? rand(14, 22) : size) + 'px';
-        el.style.top = '-40px';
-        el.style.animationDuration = rand(6, 15) + 's';
-        el.style.animationDelay = rand(0, 8) + 's';
-      }
-      frag.appendChild(el);
-    }
-    floatLayer.appendChild(frag);
+  function resizeFloat() {
+    var w = window.innerWidth, h = window.innerHeight;
+    floatCanvas.width = Math.round(w * floatDpr); floatCanvas.height = Math.round(h * floatDpr);
+    fx.setTransform(floatDpr, 0, 0, floatDpr, 0, 0);
   }
+  function resetFloat() {
+    floatItems = [];
+    if (currentType === 'none') { fx.clearRect(0, 0, innerWidth, innerHeight); return; }
+    for (var i = 0; i < currentCount; i++) {
+      var size = currentType === 'bubble' ? rand(14, 48) : currentType === 'rain' ? rand(1, 2) : rand(7, 18);
+      var fall = currentType === 'bubble' ? rand(8, 18) : rand(7, 16);
+      floatItems.push({ x: rand(0, innerWidth), y: rand(-innerHeight, innerHeight), s: size,
+        speed: (innerHeight / fall) * rand(.72, 1.18), drift: rand(-10, 10), phase: rand(0, 6.28), alpha: rand(.35, .78) });
+    }
+  }
+  function drawBubble(p, t) {
+    var r = p.s / 2, g = fx.createRadialGradient(p.x-r*.32,p.y-r*.35,r*.03,p.x,p.y,r);
+    g.addColorStop(0, 'rgba(255,255,255,.42)'); g.addColorStop(.18, 'rgba(255,255,255,.10)');
+    g.addColorStop(.78, 'rgba(175,220,255,.04)'); g.addColorStop(1, 'rgba(255,255,255,.48)');
+    fx.fillStyle = g; fx.beginPath(); fx.arc(p.x,p.y,r,0,Math.PI*2); fx.fill();
+    fx.strokeStyle = 'rgba(255,255,255,.62)'; fx.lineWidth = Math.max(.7, r*.045); fx.stroke();
+    fx.fillStyle = 'rgba(255,255,255,.78)'; fx.beginPath(); fx.ellipse(p.x-r*.3,p.y-r*.32,r*.14,r*.08,-.35,0,Math.PI*2); fx.fill();
+  }
+  function drawParticle(p, t) {
+    var c = currentType, a = p.alpha;
+    if (c === 'bubble') return drawBubble(p,t);
+    fx.save(); fx.translate(p.x,p.y); fx.rotate(Math.sin(t*.001+p.phase)*.25);
+    if (c === 'rain') { fx.strokeStyle='rgba(170,210,255,'+a*.7+')'; fx.lineWidth=p.s; fx.lineCap='round'; fx.beginPath(); fx.moveTo(0,0); fx.lineTo(-p.s*1.2,p.s*10); fx.stroke(); }
+    else if (c === 'snow') { var sg=fx.createRadialGradient(0,0,0,0,0,p.s); sg.addColorStop(0,'rgba(255,255,255,.9)'); sg.addColorStop(.55,'rgba(220,240,255,.65)'); sg.addColorStop(1,'rgba(255,255,255,0)'); fx.fillStyle=sg; fx.beginPath(); fx.arc(0,0,p.s,0,Math.PI*2); fx.fill(); }
+    else if (c === 'star') { fx.shadowColor='rgba(255,220,140,.7)'; fx.shadowBlur=p.s*1.5; fx.fillStyle='rgba(255,240,185,'+a+')'; fx.beginPath(); fx.arc(0,0,p.s*.42,0,Math.PI*2); fx.fill(); }
+    else if (c === 'heart') { var hg=fx.createRadialGradient(-p.s*.2,-p.s*.25,0,0,0,p.s); hg.addColorStop(0,'rgba(255,220,230,.95)'); hg.addColorStop(1,'rgba(220,70,110,.72)'); fx.fillStyle=hg; fx.beginPath(); fx.moveTo(0,p.s*.7); fx.bezierCurveTo(-p.s*1.2,-p.s*.05,-p.s*.7,-p.s*.8,0,-p.s*.25); fx.bezierCurveTo(p.s*.7,-p.s*.8,p.s*1.2,-p.s*.05,0,p.s*.7); fx.fill(); }
+    else { var lg=fx.createLinearGradient(-p.s,-p.s,p.s,p.s); lg.addColorStop(0,'rgba(255,220,145,.95)'); lg.addColorStop(.55,'rgba(190,120,45,.85)'); lg.addColorStop(1,'rgba(110,65,25,.75)'); fx.fillStyle=lg; fx.beginPath(); fx.moveTo(0,-p.s); fx.quadraticCurveTo(p.s,p.s*.25,0,p.s); fx.quadraticCurveTo(-p.s*.8,p.s*.2,0,-p.s); fx.fill(); }
+    fx.restore();
+  }
+  function paintFloat(ts) {
+    if (document.hidden || !state.bgMotion || currentType === 'none') { floatRaf = 0; return; }
+    var dt = Math.min(48, floatLast ? ts - floatLast : 16); floatLast = ts;
+    fx.clearRect(0,0,innerWidth,innerHeight);
+    for (var i=0;i<floatItems.length;i++) { var p=floatItems[i]; p.y += p.speed*dt/1000; p.x += Math.sin(ts*.00025+p.phase)*p.drift*dt/1000; if(p.y>innerHeight+60){p.y=-60;p.x=rand(0,innerWidth);} drawParticle(p,ts); }
+    floatRaf = requestAnimationFrame(paintFloat);
+  }
+  function startFloat() { if (!floatRaf && !document.hidden && state.bgMotion) floatRaf=requestAnimationFrame(paintFloat); }
+  function renderFloat() { resizeFloat(); resetFloat(); startFloat(); }
+  window.addEventListener('resize', resizeFloat, { passive: true });
+  document.addEventListener('visibilitychange', function(){ if(document.hidden){if(floatRaf)cancelAnimationFrame(floatRaf);floatRaf=0;}else{floatLast=0;startFloat();} });
   renderFloat();
 
   /* ── 液态玻璃（hyalite）── 只给大块上折射，卡片已经用 .lite 排除掉 ── */
