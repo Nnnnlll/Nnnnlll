@@ -41,8 +41,8 @@ body,html{width:100%;height:100%;overflow:hidden;background:#000;font-family:san
 <div id="loading" style="margin-top:20px;color:#999;font-size:14px">加载中...</div>
 </div>
 
-<script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
-<script src="https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.min.js"></script>
+<script src="lib/three.min.js"></script>
+<script src="lib/cannon.min.js"></script>
 <script>
 'use strict';
 const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -372,23 +372,31 @@ function shoot(){
       Math.cos(cameraYaw)+(Math.random()-0.5)*spread
     ).normalize();
     
-    const ray=new CANNON.Ray(
-      new CANNON.Vec3(camera.position.x,camera.position.y,camera.position.z),
-      new CANNON.Vec3(dir.x,dir.y,dir.z)
+    const from=new CANNON.Vec3(camera.position.x,camera.position.y,camera.position.z);
+    const to=new CANNON.Vec3(
+      from.x+dir.x*100,
+      from.y+dir.y*100,
+      from.z+dir.z*100
     );
-    const result=new CANNON.RaycastResult();
-    ray.intersectBodies(enemies.map(e=>e.body),result);
+    const ray=new CANNON.Ray(from,to);
+    let hitEnemy=null;
+    let minDist=Infinity;
     
-    if(result.hasHit){
-      const hitEnemy=enemies.find(e=>e.body===result.body);
-      if(hitEnemy){
-        hitEnemy.hp-=w.damage;
-        if(hitEnemy.hp<=0){
-          scene.remove(hitEnemy.mesh);
-          world.removeBody(hitEnemy.body);
-          enemies=enemies.filter(e=>e!==hitEnemy);
-          setTimeout(()=>spawnEnemy(),3000);
-        }
+    enemies.forEach(e=>{
+      const result=ray.intersectBody(e.body);
+      if(result && result.distance<minDist){
+        minDist=result.distance;
+        hitEnemy=e;
+      }
+    });
+    
+    if(hitEnemy){
+      hitEnemy.hp-=w.damage;
+      if(hitEnemy.hp<=0){
+        scene.remove(hitEnemy.mesh);
+        world.removeBody(hitEnemy.body);
+        enemies=enemies.filter(e=>e!==hitEnemy);
+        setTimeout(()=>spawnEnemy(),3000);
       }
     }
   }
