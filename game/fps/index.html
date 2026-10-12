@@ -38,10 +38,11 @@ body,html{width:100%;height:100%;overflow:hidden;background:#000;font-family:san
 <div id="menu">
 <h1>战术行动</h1>
 <button id="start">开始游戏</button>
+<div id="loading" style="margin-top:20px;color:#999;font-size:14px">加载中...</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.min.js"></script>
+<script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
+<script src="https://unpkg.com/cannon-es@0.20.0/dist/cannon-es.min.js"></script>
 <script>
 'use strict';
 const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -53,6 +54,14 @@ let playerBody,cameraYaw=0,cameraPitch=0,gameRunning=false;
 
 // 初始化
 function init(){
+  // 检查依赖是否加载
+  if(typeof THREE==='undefined' || typeof CANNON==='undefined'){
+    $('loading').textContent='库加载失败，请刷新重试';
+    setTimeout(init,1000);
+    return;
+  }
+  $('loading').style.display='none';
+  
   // Three.js
   scene=new THREE.Scene();
   scene.fog=new THREE.Fog(0x223344,10,50);
