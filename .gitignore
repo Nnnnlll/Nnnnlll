@@ -8,3 +8,5 @@ node_modules/
 
 # 构建/备份
 *.bak
+# 本地预览/调试（不上线）
+game/fps/test/
