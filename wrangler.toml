@@ -1,0 +1,14 @@
+name = "nnnnlll"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "."
+
+# D1（托管 SQLite）。部署前把 database_id 换成 wrangler d1 create 返回的真实 id；
+# 本地 wrangler pages dev 会用本地 miniflare 数据库，id 占位即可跑。
+[[d1_databases]]
+binding = "DB"
+database_name = "nnnnlll-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[vars]
+# 非敏感配置放这里；密钥（AI_KEY 等）用 wrangler secret put 写入，不要提交到仓库
+SESSION_TTL_DAYS = "30"

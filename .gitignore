@@ -1,2 +1,10 @@
-game/index.html.bak
-game/index.html.bak
+# 依赖与本地状态
+node_modules/
+.wrangler/
+.wrangler-d1/
+.dev.vars
+.env
+.env.*
+
+# 构建/备份
+*.bak

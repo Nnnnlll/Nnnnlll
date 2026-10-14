@@ -1,0 +1,22 @@
+{
+  "name": "nnnnlll",
+  "version": "2.0.0",
+  "private": true,
+  "description": "大大小小 · 静态站 + Cloudflare Pages Functions 后端",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "dev:local": "node devtest/server.mjs",
+    "test": "node devtest/e2e.mjs",
+    "db:local": "wrangler d1 execute nnnnlll-db --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute nnnnlll-db --remote --file=./schema.sql",
+    "deploy": "wrangler pages deploy ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nnnnlll/Nnnnlll.git"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.0"
+  }
+}

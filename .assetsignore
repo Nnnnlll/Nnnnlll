@@ -1,0 +1,12 @@
+node_modules
+functions
+.wrangler
+.wrangler-d1
+schema.sql
+wrangler.toml
+package.json
+package-lock.json
+.git
+.gitignore
+.assetsignore
+*.md

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>角色预览 v1.0 - 战术行动</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; font-family: Arial, sans-serif; background: #1a1a2e; }
+canvas { display: block; }
+#info {
+  position: absolute; top: 20px; left: 20px;
+  color: #fff; background: rgba(0,0,0,0.7);
+  padding: 15px; border-radius: 8px;
+  font-size: 14px; line-height: 1.8;
+}
+#controls {
+  position: absolute; bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  padding: 15px 25px; border-radius: 12px;
+  display: flex; gap: 15px;
+}
+button {
+  background: #00adb5; color: #fff; border: none;
+  padding: 10px 20px; border-radius: 6px;
+  cursor: pointer; font-size: 14px; font-weight: bold;
+  transition: background 0.2s;
+}
+button:hover { background: #007f87; }
+button.active { background: #ff6b6b; }
+</style>
+</head>
+<body>
+<div id="info">
+  <div><strong>角色模型 v1.0</strong></div>
+  <div>多边形: <span id="polyCount">-</span></div>
+  <div>当前动画: <span id="currentAnim">idle</span></div>
+  <div>帧率: <span id="fps">-</span></div>
+</div>
+<div id="controls">
+  <button data-anim="idle">Idle</button>
+  <button data-anim="walk">Walk</button>
+  <button data-anim="attack">Attack</button>
+  <button data-anim="dead">Dead</button>
+</div>
+<div id="err" style="display:none;position:absolute;top:0;left:0;right:0;background:#c00;color:#fff;padding:10px;font:12px monospace;white-space:pre-wrap;z-index:999"></div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="lib/OrbitControls.js"></script>
+<script>
+// 错误捕获：任何报错都显示在页面上
+window.onerror = function(msg, src, line, col) {
+  var d = document.getElementById('err');
+  d.style.display = 'block';
+  d.textContent += '错误: ' + msg + ' @' + (src||'').split('/').pop() + ':' + line + '\n';
+};
+// 全局脚本版把类挂在 THREE 下，取别名
+var GLTFLoader = THREE.GLTFLoader;
+var OrbitControls = THREE.OrbitControls;
+
+// === 场景初始化 ===
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+scene.fog = new THREE.Fog(0x87ceeb, 10, 50);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(0, 2, 5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 优化：限制分辨率
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target.set(0, 1, 0);
+
+// === 灯光（优化：只用必要光源）===
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambientLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 10, 5);
+dirLight.castShadow = true;
+dirLight.shadow.camera.near = 0.1;
+dirLight.shadow.camera.far = 30;
+dirLight.shadow.camera.left = -10;
+dirLight.shadow.camera.right = 10;
+dirLight.shadow.camera.top = 10;
+dirLight.shadow.camera.bottom = -10;
+dirLight.shadow.mapSize.set(1024, 1024); // 优化：降低阴影分辨率
+scene.add(dirLight);
+
+// === 地面 ===
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(50, 50),
+  new THREE.MeshStandardMaterial({ color: 0x7cba5c, roughness: 0.8 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// === 模型加载 ===
+let model, mixer, clips = {}, currentAction = null;
+let polyCount = 0;
+
+const loader = new GLTFLoader();
+loader.load('soldier-v1.0.glb', (gltf) => {
+  model = gltf.scene;
+  model.scale.setScalar(1.5); // 放大显示
+  model.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+      polyCount += child.geometry.index ? child.geometry.index.count / 3 : child.geometry.attributes.position.count / 3;
+    }
+  });
+  scene.add(model);
+  document.getElementById('polyCount').textContent = Math.round(polyCount).toLocaleString();
+
+  // 动画设置（Gobkit 格式：一条轨道，按帧范围分段）
+  if (gltf.animations.length > 0) {
+    mixer = new THREE.AnimationMixer(model);
+    const fullClip = gltf.animations[0];
+    const fps = 24;
+    
+    // idle 0-29 · attack 30-59 · dead 60-89 · walk 90-119
+    clips.idle = THREE.AnimationUtils.subclip(fullClip, 'idle', 0, 29, fps);
+    clips.attack = THREE.AnimationUtils.subclip(fullClip, 'attack', 30, 59, fps);
+    clips.dead = THREE.AnimationUtils.subclip(fullClip, 'dead', 60, 89, fps);
+    clips.walk = THREE.AnimationUtils.subclip(fullClip, 'walk', 90, 119, fps);
+    
+    playAnimation('idle');
+  }
+}, undefined, (error) => {
+  console.error('模型加载失败:', error);
+  alert('模型加载失败，请检查 soldier-v1.0.glb 是否存在');
+});
+
+// === 动画控制 ===
+function playAnimation(name) {
+  if (!mixer || !clips[name]) return;
+  
+  if (currentAction) currentAction.fadeOut(0.3);
+  currentAction = mixer.clipAction(clips[name]);
+  currentAction.reset().fadeIn(0.3);
+  currentAction.setLoop(name === 'dead' ? THREE.LoopOnce : THREE.LoopRepeat);
+  currentAction.clampWhenFinished = (name === 'dead');
+  currentAction.play();
+  
+  document.getElementById('currentAnim').textContent = name;
+  document.querySelectorAll('button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.anim === name);
+  });
+}
+
+document.querySelectorAll('button[data-anim]').forEach(btn => {
+  btn.addEventListener('click', () => playAnimation(btn.dataset.anim));
+});
+
+// === 帧率监控 ===
+let lastTime = performance.now();
+let frames = 0;
+setInterval(() => {
+  document.getElementById('fps').textContent = frames + ' fps';
+  frames = 0;
+}, 1000);
+
+// === 渲染循环 ===
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  
+  const delta = clock.getDelta();
+  if (mixer) mixer.update(delta);
+  controls.update();
+  
+  renderer.render(scene, camera);
+  frames++;
+}
+animate();
+
+// === 响应式 ===
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>
